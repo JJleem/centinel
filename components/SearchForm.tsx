@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 const QUICK_CHIPS: { label: string; sub?: string }[] = [
   { label: "hyper casual" },
   { label: "hybrid casual" },
+  { label: "Voodoo" },
+  { label: "SayGames" },
   { label: "Pizza Ready", sub: "Supercent" },
-  { label: "Stack Ball", sub: "Azur Games" },
-  { label: "Mob Control", sub: "Voodoo" },
 ];
 
 type Lang = "EN" | "KO";
@@ -97,7 +97,7 @@ export default function SearchForm() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit(query)}
-          placeholder="장르 또는 경쟁사명을 입력하세요 (예: Voodoo, 퍼즐)"
+          placeholder="게임명, 장르, 경쟁사를 입력하세요 (예: hyper casual, Voodoo)"
           className="flex-1 bg-[#0A1628] border border-[#1E3A5F] rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#4DAEDB] transition-colors"
           disabled={loading}
         />
