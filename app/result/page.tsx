@@ -110,6 +110,11 @@ export default function ResultPage() {
               </div>
             </div>
 
+            {/* Disclaimer */}
+            <p className="text-[11px] text-gray-600 leading-relaxed mb-3 px-1">
+              💡 이 광고 소재는 경쟁사/장르 트렌드를 분석하여 AI가 생성한 참고용 초안입니다. 실제 시장에서 반응하는 패턴을 기반으로 마케터가 소재 기획 시 레퍼런스로 활용할 수 있습니다.
+            </p>
+
             {/* Trend insight */}
             <div className="mb-8">
               <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} />
