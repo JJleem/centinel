@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const QUICK_CHIPS = [
-  "하이퍼캐주얼",
-  "하이브리드캐주얼",
-  "Voodoo",
-  "SayGames",
-  "Stack Ball",
+const QUICK_CHIPS: { label: string; sub?: string }[] = [
+  { label: "hyper casual" },
+  { label: "hybrid casual" },
+  { label: "Pizza Ready", sub: "Supercent" },
+  { label: "Stack Ball", sub: "Azur Games" },
+  { label: "Mob Control", sub: "Voodoo" },
 ];
 
 type Lang = "EN" | "KO";
@@ -112,14 +112,15 @@ export default function SearchForm() {
 
       {/* Quick chips */}
       <div className="flex flex-wrap gap-2 mb-6">
-        {QUICK_CHIPS.map((chip) => (
+        {QUICK_CHIPS.map(({ label, sub }) => (
           <button
-            key={chip}
-            onClick={() => { setQuery(chip); handleSubmit(chip); }}
+            key={label}
+            onClick={() => { setQuery(label); handleSubmit(label); }}
             disabled={loading}
-            className="px-4 py-1.5 bg-[#0A1628] border border-[#1E3A5F] hover:border-[#4DAEDB] hover:text-[#4DAEDB] text-gray-400 text-sm rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex flex-col items-center px-4 py-1.5 bg-[#0A1628] border border-[#1E3A5F] hover:border-[#4DAEDB] hover:text-[#4DAEDB] text-gray-400 text-sm rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {chip}
+            <span>{label}</span>
+            {sub && <span className="text-[10px] text-gray-600 leading-none -mt-0.5">{sub}</span>}
           </button>
         ))}
       </div>
