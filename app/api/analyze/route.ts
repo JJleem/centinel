@@ -128,7 +128,7 @@ async function generateAdCopies(
 ): Promise<AdCopy[]> {
   const message = await client.messages.create({
     model: MODEL,
-    max_tokens: 1000,
+    max_tokens: 2000,
     system: "Mobile game UA copywriter. Create conversion-optimized ad creatives. Respond in valid JSON only.",
     messages: [
       {
