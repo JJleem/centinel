@@ -37,7 +37,12 @@ export default function SearchForm() {
       const analyzeRes = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: searchQuery, games: scrapeData.games, lang }),
+        body: JSON.stringify({
+          query: searchQuery,
+          games: scrapeData.games,
+          lang,
+          usedFallback: scrapeData.usedFallback ?? false,
+        }),
       });
       const analyzeData = await analyzeRes.json();
       if (!analyzeRes.ok) throw new Error(analyzeData.error || "Analyze failed");
@@ -45,7 +50,10 @@ export default function SearchForm() {
       const history = JSON.parse(localStorage.getItem("centinel_history") || "[]");
       history.unshift(analyzeData.result);
       localStorage.setItem("centinel_history", JSON.stringify(history.slice(0, 10)));
-      localStorage.setItem("centinel_current", JSON.stringify(analyzeData.result));
+      localStorage.setItem("centinel_current", JSON.stringify({
+        ...analyzeData.result,
+        usedFallback: scrapeData.usedFallback ?? false,
+      }));
 
       router.push("/result");
     } catch (err) {
@@ -95,7 +103,7 @@ export default function SearchForm() {
         />
         <button
           onClick={() => handleSubmit(query)}
-          disabled={loading || !query.trim()}
+          disabled={loading || query.trim().length < 2}
           className="px-6 py-3 bg-[#4DAEDB] hover:bg-[#3A9BC8] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors whitespace-nowrap"
         >
           {loading ? "분석 중..." : "분석 시작"}

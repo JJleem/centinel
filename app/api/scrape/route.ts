@@ -48,14 +48,19 @@ export async function POST(req: NextRequest) {
       })
     );
 
-    const response: ScrapeResponse = { games, source: "scrape" };
-    return NextResponse.json(response);
+    if (games.length >= 3) {
+      const response: ScrapeResponse = { games, source: "scrape", usedFallback: false };
+      return NextResponse.json(response);
+    }
+    console.warn(`[scrape] Only ${games.length} results for "${query}", using fallback`);
   } catch {
     console.warn("[scrape] Google Play scraping failed, using fallback data");
-    const response: ScrapeResponse = {
-      games: fallbackData as GameData[],
-      source: "fallback",
-    };
-    return NextResponse.json(response);
   }
+
+  const response: ScrapeResponse = {
+    games: fallbackData as GameData[],
+    source: "fallback",
+    usedFallback: true,
+  };
+  return NextResponse.json(response);
 }

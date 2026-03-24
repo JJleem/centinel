@@ -35,11 +35,13 @@ export interface AnalysisResult {
   insight: InsightSummary;
   adCopies: AdCopy[];
   createdAt: string;
+  usedFallback?: boolean;
 }
 
 export interface ScrapeResponse {
   games: GameData[];
   source: "scrape" | "fallback";
+  usedFallback: boolean;
 }
 
 export interface AnalyzeResponse {

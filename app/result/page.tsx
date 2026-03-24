@@ -112,7 +112,7 @@ export default function ResultPage() {
 
             {/* Trend insight */}
             <div className="mb-8">
-              <TrendCard insight={result.insight} query={result.query} />
+              <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} />
             </div>
 
             {/* Ad copies */}
