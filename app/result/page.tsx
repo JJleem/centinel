@@ -117,21 +117,20 @@ export default function ResultPage() {
 
             {/* Ad copies */}
             <div>
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[#8B7FF5]" />
                 광고 소재 5종
               </h2>
+              {/* Disclaimer */}
+              <p className="text-xs text-gray-400 leading-relaxed mb-4 px-1">
+                💡 이 광고 소재는 경쟁사/장르 트렌드를 분석하여 AI가 생성한 참고용 초안입니다. 실제 시장에서 반응하는 패턴을 기반으로 마케터가 소재 기획 시 레퍼런스로 활용할 수 있습니다.
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {result.adCopies.map((copy, i) => (
                   <AdCopyCard key={i} adCopy={copy} index={i} />
                 ))}
               </div>
             </div>
-
-            {/* Disclaimer */}
-            <p className="text-xs text-gray-400 leading-relaxed mt-6 px-1">
-              💡 이 광고 소재는 경쟁사/장르 트렌드를 분석하여 AI가 생성한 참고용 초안입니다. 실제 시장에서 반응하는 패턴을 기반으로 마케터가 소재 기획 시 레퍼런스로 활용할 수 있습니다.
-            </p>
 
             {/* Game data table */}
             <div className="mt-10">
