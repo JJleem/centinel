@@ -8,7 +8,7 @@ const QUICK_CHIPS = [
   "하이브리드캐주얼",
   "Voodoo",
   "SayGames",
-  "Azur Games",
+  "Stack Ball",
 ];
 
 type Lang = "EN" | "KO";
