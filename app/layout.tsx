@@ -13,9 +13,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Centinel — 경쟁 게임 트렌드 분석 & 광고 소재 생성",
+  title: "Centinel — 경쟁 게임 트렌드 분석 AI",
   description:
-    "하이퍼캐주얼 게임 UA 마케터를 위한 AI 파이프라인 툴. 장르/경쟁사 입력 → 트렌드 분석 → 광고 카피 5종 즉시 생성.",
+    "경쟁 게임 트렌드를 자동 분석하고 광고 소재를 즉시 생성하는 AI 파이프라인 툴",
+  keywords: ["hyper casual", "game marketing", "UA", "ad creative", "AI", "Supercent"],
+  authors: [{ name: "임재준" }],
+  openGraph: {
+    title: "Centinel — 경쟁 게임 트렌드 분석 AI",
+    description: "경쟁 게임 트렌드 자동 분석 → 광고 소재 5종 즉시 생성",
+    type: "website",
+    locale: "ko_KR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Centinel — 경쟁 게임 트렌드 분석 AI",
+    description: "경쟁 게임 트렌드 자동 분석 → 광고 소재 5종 즉시 생성",
+  },
 };
 
 export default function RootLayout({
