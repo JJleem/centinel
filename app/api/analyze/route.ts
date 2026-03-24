@@ -72,14 +72,17 @@ async function analyzeTrends(games: GameData[], lang: string): Promise<TrendAnal
 async function summarizeInsights(trendAnalysis: TrendAnalysis, lang: string): Promise<InsightSummary> {
   const message = await client.messages.create({
     model: MODEL,
-    max_tokens: 300,
+    max_tokens: 800,
     system: "Mobile gaming insight expert for UA marketers. Be concise. Respond in valid JSON only.",
     messages: [{
       role: "user",
-      content: `Based on this trend analysis, create a concise insight summary:\n\nMechanics: ${trendAnalysis.mechanics.join(", ")}\nRevenue Models: ${trendAnalysis.revenueModels.join(", ")}\nKeywords: ${trendAnalysis.keywords.join(", ")}\nAnalysis: ${trendAnalysis.rawAnalysis}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
+      content: `Based on this trend analysis, create a rich insight summary:\n\nMechanics: ${trendAnalysis.mechanics.join(", ")}\nRevenue Models: ${trendAnalysis.revenueModels.join(", ")}\nKeywords: ${trendAnalysis.keywords.join(", ")}\nAnalysis: ${trendAnalysis.rawAnalysis}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
 {
-  "summary": ["insight line 1", "insight line 2", "insight line 3"],
-  "topKeywords": ["keyword1", "keyword2", "keyword3"]
+  "summary": ["insight 1", "insight 2", "insight 3", "insight 4", "insight 5"],
+  "topKeywords": ["keyword1", "keyword2", "keyword3"],
+  "notableMechanics": ["mechanic1", "mechanic2", "mechanic3"],
+  "revenueModelTrends": ["trend1", "trend2"],
+  "marketOpportunity": "one key market opportunity for UA marketers"
 }`,
     }],
   });

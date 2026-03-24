@@ -6,6 +6,7 @@ import Link from "next/link";
 import TrendCard from "@/components/TrendCard";
 import AdCopyCard from "@/components/AdCopyCard";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
+import PdfDownload from "@/components/PdfDownload";
 import { AnalysisResult } from "@/types";
 
 export default function ResultPage() {
@@ -45,6 +46,7 @@ export default function ResultPage() {
               히스토리 ({history.length})
             </button>
           )}
+          {result && <PdfDownload result={result} targetId="pdf-content" />}
           <Link
             href="/"
             className="text-sm px-4 py-1.5 bg-[#4DAEDB] hover:bg-[#3A9BC8] text-white rounded-lg transition-colors"
@@ -73,7 +75,7 @@ export default function ResultPage() {
       )}
 
       {/* Content */}
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <main id="pdf-content" className="max-w-6xl mx-auto px-6 py-8">
         {!result ? (
           <LoadingSkeleton />
         ) : (

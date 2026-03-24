@@ -19,6 +19,9 @@ export interface TrendAnalysis {
 export interface InsightSummary {
   summary: string[];
   topKeywords: string[];
+  notableMechanics?: string[];
+  revenueModelTrends?: string[];
+  marketOpportunity?: string;
 }
 
 export interface AdCopy {
