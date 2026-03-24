@@ -1,0 +1,92 @@
+[
+  {
+    "title": "Helix Jump",
+    "appId": "com.voodoo.helixjump",
+    "developer": "Voodoo",
+    "score": 4.1,
+    "installs": "500,000,000+",
+    "genre": "Arcade",
+    "description": "Jump and smash through the helix tower. A hyper-casual arcade game with addictive one-touch controls. Avoid the colored platforms and reach the bottom!"
+  },
+  {
+    "title": "Paper.io 2",
+    "appId": "com.voodoo.paperio2",
+    "developer": "Voodoo",
+    "score": 4.0,
+    "installs": "500,000,000+",
+    "genre": "Casual",
+    "description": "Expand your territory by drawing lines and capturing areas. Compete against other players in real-time. Simple controls, addictive gameplay loop."
+  },
+  {
+    "title": "Ball Rush",
+    "appId": "com.saygames.ballrush",
+    "developer": "SayGames",
+    "score": 4.2,
+    "installs": "100,000,000+",
+    "genre": "Arcade",
+    "description": "Roll the ball through challenging obstacles. Collect coins and unlock new balls. Endless runner mechanics with hyper-casual feel."
+  },
+  {
+    "title": "Knife Hit",
+    "appId": "com.ketchapp.knifehit",
+    "developer": "Ketchapp",
+    "score": 4.3,
+    "installs": "100,000,000+",
+    "genre": "Arcade",
+    "description": "Throw knives at rotating logs. Time your throws perfectly to avoid hitting other knives. Simple yet deeply satisfying one-tap mechanic."
+  },
+  {
+    "title": "Crowd City",
+    "appId": "com.voodoo.crowdcity",
+    "developer": "Voodoo",
+    "score": 4.0,
+    "installs": "500,000,000+",
+    "genre": "Casual",
+    "description": "Grow your crowd by absorbing people. Dominate the city map against other crowds. IO-style multiplayer with hyper-casual accessibility."
+  },
+  {
+    "title": "Sand Balls",
+    "appId": "com.saygames.sandballs",
+    "developer": "SayGames",
+    "score": 4.4,
+    "installs": "100,000,000+",
+    "genre": "Puzzle",
+    "description": "Draw paths to guide colored balls into matching buckets. Satisfying physics-based puzzle gameplay. ASMR-friendly visual and audio design."
+  },
+  {
+    "title": "Aquapark.io",
+    "appId": "com.voodoo.aquaparkio",
+    "developer": "Voodoo",
+    "score": 4.1,
+    "installs": "500,000,000+",
+    "genre": "Racing",
+    "description": "Race down a water slide and knock opponents off. Last one standing wins. Multiplayer IO game with vibrant summer aesthetics."
+  },
+  {
+    "title": "Woodturning 3D",
+    "appId": "com.saygames.woodturning",
+    "developer": "SayGames",
+    "score": 4.5,
+    "installs": "100,000,000+",
+    "genre": "Casual",
+    "description": "Carve and shape wooden objects on a lathe. Satisfying turning mechanics with paint and decoration. Strong ASMR and crafting appeal."
+  },
+  {
+    "title": "Magic Tiles 3",
+    "appId": "com.amanotes.magictiles3",
+    "developer": "Amanotes",
+    "score": 4.4,
+    "installs": "500,000,000+",
+    "genre": "Music",
+    "description": "Tap black tiles to the beat of popular songs. Rhythm-based hyper-casual with massive song library. Easy to learn, hard to master formula."
+  },
+  {
+    "title": "Stack Ball",
+    "appId": "com.azurgames.stackball",
+    "developer": "Azur Games",
+    "score": 4.2,
+    "installs": "500,000,000+",
+    "genre": "Arcade",
+    "description": "Smash through rotating platforms. Break platforms to descend, avoid dark ones. One-tap mechanic with helix-style progression and satisfying destruction."
+  }
+]
