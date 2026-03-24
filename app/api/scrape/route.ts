@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
         genre?: string;
         summary?: string;
         description?: string;
+        icon?: string;
       }) => ({
         title: app.title ?? "Unknown",
         appId: app.appId ?? "",
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
         installs: normalizeInstalls(app.installs),
         genre: app.genre ?? "Casual",
         description: app.summary ?? app.description ?? "",
+        icon: app.icon ?? "",
       })
     );
 

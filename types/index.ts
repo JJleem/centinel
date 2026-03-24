@@ -6,6 +6,7 @@ export interface GameData {
   installs: string;
   genre: string;
   description: string;
+  icon?: string;
 }
 
 export interface TrendAnalysis {

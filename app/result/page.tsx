@@ -132,36 +132,45 @@ export default function ResultPage() {
               </div>
             </div>
 
-            {/* Game data table */}
+            {/* Game data cards */}
             <div className="mt-10">
               <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-gray-600" />
                 수집된 게임 데이터
               </h2>
-              <div className="overflow-x-auto rounded-xl border border-[#1E3A5F]">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-[#0A1628] border-b border-[#1E3A5F]">
-                      <th className="text-left px-4 py-3 text-gray-500 font-medium">게임명</th>
-                      <th className="text-left px-4 py-3 text-gray-500 font-medium">개발사</th>
-                      <th className="text-left px-4 py-3 text-gray-500 font-medium">장르</th>
-                      <th className="text-right px-4 py-3 text-gray-500 font-medium">평점</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.games.map((game, i) => (
-                      <tr
-                        key={i}
-                        className="border-b border-[#1E3A5F] last:border-0 hover:bg-[#0A1628] transition-colors"
-                      >
-                        <td className="px-4 py-3 text-white font-medium">{game.title}</td>
-                        <td className="px-4 py-3 text-gray-400">{game.developer}</td>
-                        <td className="px-4 py-3 text-gray-400">{game.genre}</td>
-                        <td className="px-4 py-3 text-right text-[#4DAEDB]">{game.score.toFixed(1)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {result.games.map((game, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 bg-[#0A1628] border border-[rgba(77,174,219,0.2)] hover:border-[rgba(77,174,219,0.5)] rounded-[10px] p-3 transition-colors"
+                  >
+                    {/* Icon */}
+                    {game.icon ? (
+                      <img
+                        src={game.icon}
+                        alt={game.title}
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 rounded-lg shrink-0 object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg shrink-0 bg-[#1E3A5F] flex items-center justify-center text-[#4DAEDB] font-bold text-base">
+                        {game.title.charAt(0)}
+                      </div>
+                    )}
+                    {/* Info */}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-white font-semibold text-sm truncate">{game.title}</p>
+                      <p className="text-gray-500 text-xs truncate">{game.developer}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-yellow-400 text-xs">⭐ {game.score.toFixed(1)}</span>
+                        <span className="px-1.5 py-0.5 bg-[#020810] border border-[#1E3A5F] text-gray-500 text-[10px] rounded-full truncate">
+                          {game.genre}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </>
