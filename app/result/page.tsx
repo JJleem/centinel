@@ -142,7 +142,6 @@ export default function ResultPage() {
                       <th className="text-left px-4 py-3 text-gray-500 font-medium">개발사</th>
                       <th className="text-left px-4 py-3 text-gray-500 font-medium">장르</th>
                       <th className="text-right px-4 py-3 text-gray-500 font-medium">평점</th>
-                      <th className="text-right px-4 py-3 text-gray-500 font-medium">다운로드</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -155,7 +154,6 @@ export default function ResultPage() {
                         <td className="px-4 py-3 text-gray-400">{game.developer}</td>
                         <td className="px-4 py-3 text-gray-400">{game.genre}</td>
                         <td className="px-4 py-3 text-right text-[#4DAEDB]">{game.score.toFixed(1)}</td>
-                        <td className="px-4 py-3 text-right text-gray-400">{game.installs}</td>
                       </tr>
                     ))}
                   </tbody>
