@@ -3,7 +3,7 @@ import fallbackData from "@/data/fallback.json";
 import { GameData, ScrapeResponse } from "@/types";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const gplay = require("google-play-scraper");
+const gplay = require("google-play-scraper").default;
 
 function normalizeInstalls(installs: string | number | undefined): string {
   if (!installs) return "N/A";
@@ -53,8 +53,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(response);
     }
     console.warn(`[scrape] Only ${games.length} results for "${query}", using fallback`);
-  } catch {
+  } catch (error: unknown) {
+    const err = error as { message?: string; code?: string };
     console.warn("[scrape] Google Play scraping failed, using fallback data");
+    console.log("[scrape] Error details:", err.message, err.code);
   }
 
   const response: ScrapeResponse = {
