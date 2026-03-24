@@ -42,21 +42,10 @@ export default function Home() {
       {/* Recent history */}
       <HistorySection />
 
-      {/* Evaluator notice */}
-      <div className="mt-14 w-full max-w-2xl mx-auto">
-        <p className="text-center text-[11px] text-gray-700 leading-relaxed px-4 py-3 rounded-xl border border-[#1E3A5F]/40 bg-[#0A1628]/30">
-          ⚠️ 평가자 유의사항: 본 프로토타입은 Claude API를 실시간 호출합니다.
-          1회 분석당 약 $0.01~0.03 비용이 발생하므로 과도한 호출을 삼가주세요.
-          <span className="text-gray-600">
-            {" "}(프로덕션 전환 시 Rate Limiting 적용 예정)
-          </span>
-        </p>
-      </div>
-
       {/* Footer */}
-      <footer className="mt-6 text-center space-y-1.5">
-        <p className="text-gray-700 text-xs">
-          Powered by Claude AI · Google Play 실시간 데이터 기반
+      <footer className="mt-14 text-center space-y-1.5">
+        <p className="text-gray-600 text-xs">
+          ⚡ Powered by Claude API · Real-time Analysis
         </p>
         <p className="text-gray-700 text-[11px]">
           Made by 임재준 ·{" "}
