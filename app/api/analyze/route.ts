@@ -11,6 +11,54 @@ import {
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const MODEL = "claude-sonnet-4-20250514";
 
+// Robust JSON parser: cleans up common Claude output issues before giving up
+function parseJSON<T>(text: string, stage: string): T {
+  // 1st attempt: extract outermost {...} and parse directly
+  const match = text.match(/\{[\s\S]*\}/);
+  if (match) {
+    try {
+      return JSON.parse(match[0]) as T;
+    } catch {
+      // fall through to cleanup
+    }
+  }
+
+  // 2nd attempt: clean trailing commas then retry
+  const cleaned = (match?.[0] ?? text)
+    .replace(/,\s*([}\]])/g, "$1")   // trailing commas before } or ]
+    .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?\s*:/g, '"$2":'); // unquoted keys
+  try {
+    return JSON.parse(cleaned) as T;
+  } catch {
+    // fall through to bracket recovery
+  }
+
+  // 3rd attempt: close unclosed brackets/braces (token-limit truncation)
+  let recovered = cleaned;
+  const opens = [...recovered].reduce((acc, ch) => {
+    if (ch === "{") return acc + 1;
+    if (ch === "}") return acc - 1;
+    return acc;
+  }, 0);
+  const arrOpens = [...recovered].reduce((acc, ch) => {
+    if (ch === "[") return acc + 1;
+    if (ch === "]") return acc - 1;
+    return acc;
+  }, 0);
+  // remove trailing incomplete value (last comma or partial string)
+  recovered = recovered.replace(/,\s*$/, "").replace(/"[^"]*$/, '"...');
+  recovered += "]".repeat(Math.max(0, arrOpens)) + "}".repeat(Math.max(0, opens));
+  try {
+    return JSON.parse(recovered) as T;
+  } catch {
+    // all attempts failed
+  }
+
+  throw new Error(
+    `${stage}: JSON parse failed.\nReceived text (first 500 chars):\n${text.slice(0, 500)}`
+  );
+}
+
 const LANG_INSTRUCTION: Record<string, string> = {
   EN: "Respond in English.",
   KO: "한국어로 답변해줘.",
@@ -43,11 +91,8 @@ async function analyzeTrends(games: GameData[], lang: string): Promise<TrendAnal
     ],
   });
 
-  const text =
-    message.content[0].type === "text" ? message.content[0].text : "";
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Stage 1: Failed to parse JSON");
-  return JSON.parse(jsonMatch[0]) as TrendAnalysis;
+  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  return parseJSON<TrendAnalysis>(text, "Stage 1");
 }
 
 // Stage 2: Insight Summarizer
@@ -71,11 +116,8 @@ async function summarizeInsights(
     ],
   });
 
-  const text =
-    message.content[0].type === "text" ? message.content[0].text : "";
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Stage 2: Failed to parse JSON");
-  return JSON.parse(jsonMatch[0]) as InsightSummary;
+  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  return parseJSON<InsightSummary>(text, "Stage 2");
 }
 
 // Stage 3: Ad Copywriter (generates 5 ad copies)
@@ -86,7 +128,7 @@ async function generateAdCopies(
 ): Promise<AdCopy[]> {
   const message = await client.messages.create({
     model: MODEL,
-    max_tokens: 800,
+    max_tokens: 1000,
     system: "Mobile game UA copywriter. Create conversion-optimized ad creatives. Respond in valid JSON only.",
     messages: [
       {
@@ -109,12 +151,9 @@ Make each of the 5 copies distinct in tone: 1) Excitement, 2) Challenge, 3) Curi
     ],
   });
 
-  const text =
-    message.content[0].type === "text" ? message.content[0].text : "";
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Stage 3: Failed to parse JSON");
-  const parsed = JSON.parse(jsonMatch[0]);
-  return parsed.adCopies as AdCopy[];
+  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  const parsed = parseJSON<{ adCopies: AdCopy[] }>(text, "Stage 3");
+  return parsed.adCopies;
 }
 
 export async function POST(req: NextRequest) {
