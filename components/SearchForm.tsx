@@ -26,40 +26,26 @@ export default function SearchForm() {
     setError("");
 
     try {
-      // Stage 1: Scrape
       const scrapeRes = await fetch("/api/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: searchQuery }),
       });
       const scrapeData = await scrapeRes.json();
-
       if (!scrapeRes.ok) throw new Error(scrapeData.error || "Scrape failed");
 
-      // Stage 2: Analyze (with lang)
       const analyzeRes = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: searchQuery, games: scrapeData.games, lang }),
       });
       const analyzeData = await analyzeRes.json();
+      if (!analyzeRes.ok) throw new Error(analyzeData.error || "Analyze failed");
 
-      if (!analyzeRes.ok)
-        throw new Error(analyzeData.error || "Analyze failed");
-
-      // Save to localStorage
-      const history = JSON.parse(
-        localStorage.getItem("centinel_history") || "[]"
-      );
+      const history = JSON.parse(localStorage.getItem("centinel_history") || "[]");
       history.unshift(analyzeData.result);
-      localStorage.setItem(
-        "centinel_history",
-        JSON.stringify(history.slice(0, 10))
-      );
-      localStorage.setItem(
-        "centinel_current",
-        JSON.stringify(analyzeData.result)
-      );
+      localStorage.setItem("centinel_history", JSON.stringify(history.slice(0, 10)));
+      localStorage.setItem("centinel_current", JSON.stringify(analyzeData.result));
 
       router.push("/result");
     } catch (err) {
@@ -70,18 +56,24 @@ export default function SearchForm() {
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      {/* Lang toggle */}
-      <div className="flex justify-end mb-2">
-        <div className="flex rounded-lg border border-[#1E3A5F] overflow-hidden text-xs font-semibold">
+      {/* Label row: 언어 선택 */}
+      <div className="flex items-center justify-between mb-2 px-1">
+        <span className="text-xs text-gray-600">장르 / 경쟁사 검색</span>
+        {/* Lang toggle — sliding pill style */}
+        <div className="relative flex items-center bg-[#0A1628] border border-[#1E3A5F] rounded-full p-0.5 gap-0">
+          {/* sliding background */}
+          <div
+            className={`absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-full bg-gradient-to-r from-[#4DAEDB] to-[#3A9BC8] transition-transform duration-200 ${
+              lang === "KO" ? "translate-x-[calc(100%+4px)]" : "translate-x-0.5"
+            }`}
+          />
           {(["EN", "KO"] as Lang[]).map((l) => (
             <button
               key={l}
               onClick={() => setLang(l)}
               disabled={loading}
-              className={`px-3 py-1.5 transition-colors disabled:cursor-not-allowed ${
-                lang === l
-                  ? "bg-[#4DAEDB] text-white"
-                  : "bg-[#0A1628] text-gray-500 hover:text-gray-300"
+              className={`relative z-10 px-3.5 py-1 text-xs font-semibold rounded-full transition-colors duration-200 disabled:cursor-not-allowed ${
+                lang === l ? "text-white" : "text-gray-500 hover:text-gray-300"
               }`}
             >
               {l}
@@ -90,6 +82,7 @@ export default function SearchForm() {
         </div>
       </div>
 
+      {/* Input row */}
       <div className="flex gap-3 mb-4">
         <input
           type="text"
@@ -114,10 +107,7 @@ export default function SearchForm() {
         {QUICK_CHIPS.map((chip) => (
           <button
             key={chip}
-            onClick={() => {
-              setQuery(chip);
-              handleSubmit(chip);
-            }}
+            onClick={() => { setQuery(chip); handleSubmit(chip); }}
             disabled={loading}
             className="px-4 py-1.5 bg-[#0A1628] border border-[#1E3A5F] hover:border-[#4DAEDB] hover:text-[#4DAEDB] text-gray-400 text-sm rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
