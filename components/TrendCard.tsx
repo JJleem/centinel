@@ -8,7 +8,7 @@ interface Props {
 
 export default function TrendCard({ insight, query, usedFallback }: Props) {
   return (
-    <div className="bg-[#0A1628] border border-[#1E3A5F] rounded-2xl p-6">
+    <div className="pdf-card bg-[#0A1628] border border-[#1E3A5F] rounded-2xl p-6">
       {usedFallback && (
         <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-yellow-500/5 border border-yellow-500/20 text-yellow-500/80 text-xs">
           ⚠️ 검색 결과가 부족하여 유사 장르 데이터로 분석했습니다

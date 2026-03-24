@@ -41,8 +41,26 @@ body {
     color: #ffffff !important;
   }
 
-  /* Prevent mid-card page breaks */
+  /* Prevent mid-card page breaks (both legacy and modern syntax) */
   .pdf-card {
+    page-break-inside: avoid;
     break-inside: avoid;
+  }
+
+  /* Section headers start naturally without forced breaks */
+  .pdf-section {
+    page-break-before: auto;
+    break-before: auto;
+  }
+
+  /* Grid containers: allow page breaks between items, not inside */
+  .pdf-grid {
+    display: block;
+  }
+
+  .pdf-grid > * {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 8px;
   }
 }
