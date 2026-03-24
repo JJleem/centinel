@@ -11,8 +11,13 @@ import {
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const MODEL = "claude-sonnet-4-20250514";
 
+const LANG_INSTRUCTION: Record<string, string> = {
+  EN: "Respond in English.",
+  KO: "한국어로 답변해줘.",
+};
+
 // Stage 1: Trend Analyst
-async function analyzeTrends(games: GameData[]): Promise<TrendAnalysis> {
+async function analyzeTrends(games: GameData[], lang: string): Promise<TrendAnalysis> {
   const gameListText = games
     .map(
       (g, i) =>
@@ -27,7 +32,7 @@ async function analyzeTrends(games: GameData[]): Promise<TrendAnalysis> {
     messages: [
       {
         role: "user",
-        content: `Analyze these top mobile games and extract trends:\n\n${gameListText}\n\nRespond with JSON in this exact format:
+        content: `Analyze these top mobile games and extract trends:\n\n${gameListText}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
 {
   "mechanics": ["mechanic1", "mechanic2", "mechanic3"],
   "revenueModels": ["model1", "model2"],
@@ -47,7 +52,8 @@ async function analyzeTrends(games: GameData[]): Promise<TrendAnalysis> {
 
 // Stage 2: Insight Summarizer
 async function summarizeInsights(
-  trendAnalysis: TrendAnalysis
+  trendAnalysis: TrendAnalysis,
+  lang: string
 ): Promise<InsightSummary> {
   const message = await client.messages.create({
     model: MODEL,
@@ -56,7 +62,7 @@ async function summarizeInsights(
     messages: [
       {
         role: "user",
-        content: `Based on this trend analysis, create a concise insight summary:\n\nMechanics: ${trendAnalysis.mechanics.join(", ")}\nRevenue Models: ${trendAnalysis.revenueModels.join(", ")}\nKeywords: ${trendAnalysis.keywords.join(", ")}\nAnalysis: ${trendAnalysis.rawAnalysis}\n\nRespond with JSON in this exact format:
+        content: `Based on this trend analysis, create a concise insight summary:\n\nMechanics: ${trendAnalysis.mechanics.join(", ")}\nRevenue Models: ${trendAnalysis.revenueModels.join(", ")}\nKeywords: ${trendAnalysis.keywords.join(", ")}\nAnalysis: ${trendAnalysis.rawAnalysis}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
 {
   "summary": ["insight line 1", "insight line 2", "insight line 3"],
   "topKeywords": ["keyword1", "keyword2", "keyword3"]
@@ -75,7 +81,8 @@ async function summarizeInsights(
 // Stage 3: Ad Copywriter (generates 5 ad copies)
 async function generateAdCopies(
   insight: InsightSummary,
-  query: string
+  query: string,
+  lang: string
 ): Promise<AdCopy[]> {
   const message = await client.messages.create({
     model: MODEL,
@@ -84,7 +91,7 @@ async function generateAdCopies(
     messages: [
       {
         role: "user",
-        content: `Create 5 distinct ad copies for a hyper-casual game in the "${query}" space.\n\nMarket Insights:\n${insight.summary.join("\n")}\nTop Keywords: ${insight.topKeywords.join(", ")}\n\nRespond with JSON in this exact format:
+        content: `Create 5 distinct ad copies for a hyper-casual game in the "${query}" space.\n\nMarket Insights:\n${insight.summary.join("\n")}\nTop Keywords: ${insight.topKeywords.join(", ")}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
 {
   "adCopies": [
     {
@@ -111,7 +118,7 @@ Make each of the 5 copies distinct in tone: 1) Excitement, 2) Challenge, 3) Curi
 }
 
 export async function POST(req: NextRequest) {
-  const { query, games } = await req.json();
+  const { query, games, lang = "EN" } = await req.json();
 
   if (!query || !games || !Array.isArray(games)) {
     return NextResponse.json(
@@ -129,9 +136,9 @@ export async function POST(req: NextRequest) {
 
   try {
     // Sequential 3-stage orchestration
-    const trendAnalysis = await analyzeTrends(games as GameData[]);
-    const insight = await summarizeInsights(trendAnalysis);
-    const adCopies = await generateAdCopies(insight, query);
+    const trendAnalysis = await analyzeTrends(games as GameData[], lang);
+    const insight = await summarizeInsights(trendAnalysis, lang);
+    const adCopies = await generateAdCopies(insight, query, lang);
 
     const result: AnalysisResult = {
       query,

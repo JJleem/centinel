@@ -11,10 +11,13 @@ const QUICK_CHIPS = [
   "SayGames",
 ];
 
+type Lang = "EN" | "KO";
+
 export default function SearchForm() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [lang, setLang] = useState<Lang>("EN");
   const router = useRouter();
 
   const handleSubmit = async (searchQuery: string) => {
@@ -33,11 +36,11 @@ export default function SearchForm() {
 
       if (!scrapeRes.ok) throw new Error(scrapeData.error || "Scrape failed");
 
-      // Stage 2: Analyze
+      // Stage 2: Analyze (with lang)
       const analyzeRes = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: searchQuery, games: scrapeData.games }),
+        body: JSON.stringify({ query: searchQuery, games: scrapeData.games, lang }),
       });
       const analyzeData = await analyzeRes.json();
 
@@ -67,6 +70,26 @@ export default function SearchForm() {
 
   return (
     <div className="w-full max-w-2xl mx-auto">
+      {/* Lang toggle */}
+      <div className="flex justify-end mb-2">
+        <div className="flex rounded-lg border border-[#1E3A5F] overflow-hidden text-xs font-semibold">
+          {(["EN", "KO"] as Lang[]).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              disabled={loading}
+              className={`px-3 py-1.5 transition-colors disabled:cursor-not-allowed ${
+                lang === l
+                  ? "bg-[#4DAEDB] text-white"
+                  : "bg-[#0A1628] text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="flex gap-3 mb-4">
         <input
           type="text"
