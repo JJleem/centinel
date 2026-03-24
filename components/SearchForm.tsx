@@ -155,24 +155,35 @@ export default function SearchForm() {
       {/* Label row + lang toggle */}
       <div className="flex items-center justify-between mb-2 px-1">
         <span className="text-xs text-gray-600">장르 / 경쟁사 검색</span>
-        <div className="relative flex items-center bg-[#0A1628] border border-[#1E3A5F] rounded-full p-0.5">
-          <div
-            className={`absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-full bg-gradient-to-r from-[#4DAEDB] to-[#3A9BC8] transition-transform duration-200 ${
-              lang === "KO" ? "translate-x-[calc(100%+4px)]" : "translate-x-0.5"
-            }`}
-          />
-          {(["EN", "KO"] as Lang[]).map((l) => (
-            <button
-              key={l}
-              onClick={() => setLang(l)}
-              disabled={loading}
-              className={`relative z-10 px-3.5 py-1 text-xs font-semibold rounded-full transition-colors duration-200 disabled:cursor-not-allowed ${
-                lang === l ? "text-white" : "text-gray-500 hover:text-gray-300"
-              }`}
-            >
-              {l}
-            </button>
-          ))}
+        <div className="flex items-center gap-2.5">
+          {/* Speech bubble hint — visible before user types */}
+          {mounted && !loading && query.trim().length === 0 && (
+            <div className="relative flex items-center">
+              <div className="bg-[#0D1F3C] border border-[#4DAEDB]/25 text-[#4DAEDB]/80 text-[11px] leading-tight px-2.5 py-1.5 rounded-lg whitespace-nowrap animate-pulse">
+                결과 언어를 선택해주세요
+              </div>
+              {/* Arrow pointing right toward toggle */}
+              <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[6px] border-t-transparent border-b-transparent border-l-[#4DAEDB]/25" />
+            </div>
+          )}
+
+          {/* Lang toggle — two distinct pill buttons */}
+          <div className="flex items-center gap-1">
+            {(["EN", "KO"] as Lang[]).map((l) => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                disabled={loading}
+                className={`px-3 py-1 text-xs font-semibold rounded-full transition-all duration-200 disabled:cursor-not-allowed ${
+                  lang === l
+                    ? "bg-gradient-to-r from-[#4DAEDB] to-[#3A9BC8] text-white shadow-[0_0_10px_rgba(77,174,219,0.25)]"
+                    : "bg-[#0A1628] border border-[#1E3A5F] text-gray-500 hover:text-gray-300 hover:border-[#4DAEDB]/40"
+                }`}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

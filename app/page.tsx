@@ -43,33 +43,35 @@ export default function Home() {
       <HistorySection />
 
       {/* Footer */}
-      <footer className="mt-14 text-center space-y-1.5">
-        <p className="text-gray-600 text-xs">
+      <footer className="mt-14 text-center space-y-2">
+        <p className="text-gray-500 text-xs">
           ⚡ Powered by Claude API · Real-time Analysis
         </p>
-        <p className="text-gray-700 text-[11px]">
-          Made by 임재준 ·{" "}
+        <p className="text-gray-300 text-sm font-medium">
+          Made by 임재준
+        </p>
+        <p className="text-gray-500 text-xs flex items-center justify-center gap-2 flex-wrap">
           <a
             href="mailto:leemjaejun@gmail.com"
-            className="hover:text-gray-500 transition-colors"
+            className="hover:text-[#4DAEDB] transition-colors"
           >
             leemjaejun@gmail.com
-          </a>{" "}
-          ·{" "}
+          </a>
+          <span className="text-gray-700">·</span>
           <a
             href="https://github.com/JJleem"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-gray-500 transition-colors"
+            className="hover:text-[#4DAEDB] transition-colors"
           >
             github.com/JJleem
-          </a>{" "}
-          ·{" "}
+          </a>
+          <span className="text-gray-700">·</span>
           <a
             href="https://molt-ten.vercel.app"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-gray-500 transition-colors"
+            className="hover:text-[#4DAEDB] transition-colors"
           >
             molt-ten.vercel.app
           </a>
