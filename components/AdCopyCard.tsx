@@ -48,7 +48,7 @@ export default function AdCopyCard({ adCopy, index }: Props) {
   };
 
   return (
-    <div className="bg-[#0A1628] border border-[#1E3A5F] rounded-2xl p-5 flex flex-col gap-4">
+    <div className="pdf-card bg-[#0A1628] border border-[#1E3A5F] rounded-2xl p-5 flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -61,7 +61,7 @@ export default function AdCopyCard({ adCopy, index }: Props) {
         </div>
         <button
           onClick={handleCopyAll}
-          className="text-xs px-3 py-1 rounded-lg border border-[#1E3A5F] hover:border-[#4DAEDB] text-gray-500 hover:text-[#4DAEDB] transition-colors"
+          className="no-print text-xs px-3 py-1 rounded-lg border border-[#1E3A5F] hover:border-[#4DAEDB] text-gray-500 hover:text-[#4DAEDB] transition-colors"
         >
           {allCopied ? "✓ 전체 복사됨" : "전체 복사"}
         </button>

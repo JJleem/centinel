@@ -37,7 +37,7 @@ export default function ResultPage() {
           </div>
           <span className="font-semibold text-white">Centinel</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 no-print">
           {history.length > 0 && (
             <button
               onClick={() => setShowHistory(!showHistory)}
@@ -46,7 +46,7 @@ export default function ResultPage() {
               히스토리 ({history.length})
             </button>
           )}
-          {result && <PdfDownload result={result} targetId="pdf-content" />}
+          <PdfDownload />
           <Link
             href="/"
             className="text-sm px-4 py-1.5 bg-[#4DAEDB] hover:bg-[#3A9BC8] text-white rounded-lg transition-colors"
@@ -58,7 +58,7 @@ export default function ResultPage() {
 
       {/* History panel */}
       {showHistory && (
-        <div className="border-b border-[#1E3A5F] bg-[#0A1628] px-6 py-4">
+        <div className="no-print border-b border-[#1E3A5F] bg-[#0A1628] px-6 py-4">
           <p className="text-xs text-gray-500 mb-3">최근 분석 히스토리</p>
           <div className="flex flex-wrap gap-2">
             {history.map((item, i) => (

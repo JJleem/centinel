@@ -17,3 +17,32 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@media print {
+  /* Force dark theme colors in print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide interactive / nav elements */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: #020810 !important;
+    color: #ffffff !important;
+  }
+
+  /* Prevent mid-card page breaks */
+  .pdf-card {
+    break-inside: avoid;
+  }
+}
