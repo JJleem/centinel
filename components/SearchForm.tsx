@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 const QUICK_CHIPS = [
   "하이퍼캐주얼",
   "하이브리드캐주얼",
-  "퍼즐",
   "Voodoo",
   "SayGames",
+  "Azur Games",
 ];
 
 type Lang = "EN" | "KO";
