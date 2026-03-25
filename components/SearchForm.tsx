@@ -16,38 +16,43 @@ type StepStatus = "waiting" | "active" | "done" | "error";
 
 const STEP_LABELS = [
   "Google Play 데이터 수집",
-  "Claude AI 트렌드 분석",
-  "광고 소재 생성",
+  "트렌드 분석 에이전트 (Sonnet)",
+  "인사이트 앙상블 (Haiku ×2 병렬)",
+  "광고 소재 앙상블 (Haiku ×2 병렬)",
+  "오케스트레이터 최종 선별 (Sonnet)",
 ];
 
-const INITIAL_STATUSES: StepStatus[] = ["waiting", "waiting", "waiting"];
+const INITIAL_STATUSES: StepStatus[] = ["waiting", "waiting", "waiting", "waiting", "waiting"];
 
 function StepIndicator({ status, label }: { status: StepStatus; label: string }) {
   return (
     <div className="flex items-center gap-3">
       <div className="w-5 h-5 shrink-0 flex items-center justify-center">
         {status === "done" ? (
-          <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
-            <span className="text-emerald-400 text-[10px] font-bold">✓</span>
+          <div className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-300 flex items-center justify-center">
+            <span className="text-emerald-500 text-[10px] font-bold">✓</span>
           </div>
         ) : status === "active" ? (
-          <div className="w-4 h-4 rounded-full border-2 border-[#4DAEDB] border-t-transparent animate-spin" />
+          <div
+            className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: "#0B7FD4", borderTopColor: "transparent" }}
+          />
         ) : status === "error" ? (
-          <div className="w-5 h-5 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center">
-            <span className="text-red-400 text-[10px] font-bold">✕</span>
+          <div className="w-5 h-5 rounded-full bg-red-50 border border-red-300 flex items-center justify-center">
+            <span className="text-red-500 text-[10px] font-bold">✕</span>
           </div>
         ) : (
-          <div className="w-4 h-4 rounded-full border border-gray-700" />
+          <div className="w-4 h-4 rounded-full border border-[#C8E4F4]" />
         )}
       </div>
       <span className={`text-sm transition-colors ${
-        status === "done"    ? "text-emerald-400" :
-        status === "active"  ? "text-white" :
-        status === "error"   ? "text-red-400" :
-                               "text-gray-600"
+        status === "done"    ? "text-emerald-600" :
+        status === "active"  ? "text-[#0A1929] font-medium" :
+        status === "error"   ? "text-red-500" :
+                               "text-[#4A6080]"
       }`}>
         {label}
-        {status === "active" && <span className="text-gray-500"> ...</span>}
+        {status === "active" && <span className="text-[#4A6080] ml-1">...</span>}
       </span>
     </div>
   );
@@ -57,7 +62,7 @@ export default function SearchForm() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [lang, setLang] = useState<Lang>("EN");
+  const [lang, setLang] = useState<Lang>("KO");
   const [stepStatuses, setStepStatuses] = useState<StepStatus[]>(INITIAL_STATUSES);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
@@ -72,10 +77,9 @@ export default function SearchForm() {
     if (!searchQuery.trim()) return;
     setLoading(true);
     setError("");
-    setStepStatuses(["active", "waiting", "waiting"]);
+    setStepStatuses(["active", "waiting", "waiting", "waiting", "waiting"]);
 
     try {
-      // Step 1: Scrape
       const scrapeRes = await fetch("/api/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -86,7 +90,6 @@ export default function SearchForm() {
       setStep(0, "done");
       setStep(1, "active");
 
-      // Step 2+3: Analyze via SSE stream
       const analyzeRes = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -112,32 +115,20 @@ export default function SearchForm() {
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
           let data: Record<string, unknown>;
-          try {
-            data = JSON.parse(line.slice(6));
-          } catch {
-            continue; // skip malformed line
-          }
+          try { data = JSON.parse(line.slice(6)); } catch { continue; }
 
           if (data.error) throw new Error(String(data.error));
-
-          if (data.step === 1) {
-            // trendAnalysis done — insight still running, keep step 2 active
-          } else if (data.step === 2) {
-            // insight done — move to ad copy generation
-            setStep(1, "done");
-            setStep(2, "active");
-          } else if (data.step === 3) {
-            setStep(2, "done");
-            finalResult = data.result;
-          }
+          if (data.event === "analysis_done") { setStep(1, "done"); setStep(2, "active"); }
+          else if (data.event === "insights_ensemble_done") { setStep(2, "done"); setStep(3, "active"); }
+          else if (data.event === "copies_ensemble_done") { setStep(3, "done"); setStep(4, "active"); }
+          else if (data.event === "final_selection_done") { setStep(4, "done"); finalResult = data.result; }
         }
       }
 
       if (!finalResult) throw new Error("분석 결과를 받지 못했습니다");
 
-      // Save to localStorage
       const history = JSON.parse(localStorage.getItem("centinel_history") || "[]");
-      const resultWithFallback = { ...finalResult, usedFallback: scrapeData.usedFallback ?? false };
+      const resultWithFallback = { ...finalResult, usedFallback: scrapeData.usedFallback ?? false, lang };
       history.unshift(resultWithFallback);
       localStorage.setItem("centinel_history", JSON.stringify(history.slice(0, 10)));
       localStorage.setItem("centinel_current", JSON.stringify(resultWithFallback));
@@ -151,34 +142,34 @@ export default function SearchForm() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      {/* Label row + lang toggle */}
-      <div className="flex items-center justify-between mb-2 px-1">
-        <span className="text-xs text-gray-600">장르 / 경쟁사 검색</span>
+    <div className="w-full">
+      {/* Lang toggle row */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <span className="text-[#4A6080] text-xs">장르 · 경쟁사 · 게임명 검색</span>
         <div className="flex items-center gap-2.5">
-          {/* Speech bubble hint — visible before user types */}
+          {/* Hint bubble */}
           {mounted && !loading && query.trim().length === 0 && (
             <div className="relative flex items-center">
-              <div className="bg-[#0D1F3C] border border-[#4DAEDB]/25 text-[#4DAEDB]/80 text-[11px] leading-tight px-2.5 py-1.5 rounded-lg whitespace-nowrap animate-pulse">
+              <div className="bg-[#EBF5FC] border border-[#C8E4F4] text-[#1A7AAF] text-[11px] leading-tight px-2.5 py-1.5 rounded-[10px] whitespace-nowrap">
                 결과 언어를 선택해주세요
               </div>
-              {/* Arrow pointing right toward toggle */}
-              <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[6px] border-t-transparent border-b-transparent border-l-[#4DAEDB]/25" />
+              <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[6px] border-t-transparent border-b-transparent border-l-[#C8E4F4]" />
             </div>
           )}
 
-          {/* Lang toggle — two distinct pill buttons */}
-          <div className="flex items-center gap-1">
+          {/* Lang toggle */}
+          <div className="flex items-center gap-1 bg-[#F8FBFF] border border-[#E8F4FC] rounded-[10px] p-0.5">
             {(["EN", "KO"] as Lang[]).map((l) => (
               <button
                 key={l}
                 onClick={() => setLang(l)}
                 disabled={loading}
-                className={`px-3 py-1 text-xs font-semibold rounded-full transition-all duration-200 disabled:cursor-not-allowed ${
+                className={`px-3 py-1 text-xs font-semibold rounded-[8px] transition-all duration-200 disabled:cursor-not-allowed ${
                   lang === l
-                    ? "bg-gradient-to-r from-[#4DAEDB] to-[#3A9BC8] text-white shadow-[0_0_10px_rgba(77,174,219,0.25)]"
-                    : "bg-[#0A1628] border border-[#1E3A5F] text-gray-500 hover:text-gray-300 hover:border-[#4DAEDB]/40"
+                    ? "text-white shadow-sm"
+                    : "text-[#4A6080] hover:text-[#0A1929]"
                 }`}
+                style={lang === l ? { background: "linear-gradient(135deg, #0B7FD4, #6B4EFF)" } : {}}
               >
                 {l}
               </button>
@@ -195,13 +186,15 @@ export default function SearchForm() {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit(query)}
           placeholder="게임명, 장르, 경쟁사를 입력하세요 (예: hyper casual, Voodoo)"
-          className="flex-1 bg-[#0A1628] border border-[#1E3A5F] rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#4DAEDB] transition-colors"
+          className="flex-1 rounded-[10px] px-5 py-4 text-[#0A1929] placeholder-[#4A6080] text-base focus:outline-none focus:ring-2 transition-all border"
+          style={{ background: "#F8FBFF", borderColor: "#C8E4F4" }}
           disabled={loading}
         />
         <button
           onClick={() => handleSubmit(query)}
           disabled={loading || query.trim().length < 2}
-          className="px-6 py-3 bg-[#4DAEDB] hover:bg-[#3A9BC8] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors whitespace-nowrap"
+          className="px-6 py-4 text-white font-bold text-sm rounded-[10px] shadow-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+          style={{ background: "linear-gradient(135deg, #0B7FD4, #6B4EFF)" }}
         >
           {loading ? "분석 중..." : "분석 시작"}
         </button>
@@ -213,9 +206,10 @@ export default function SearchForm() {
           {QUICK_CHIPS.map((chip) => (
             <button
               key={chip}
-              onClick={() => { setQuery(chip); handleSubmit(chip); }}
+              onClick={() => setQuery(chip)}
               disabled={loading}
-              className="px-4 py-1.5 bg-[#0A1628] border border-[#1E3A5F] hover:border-[#4DAEDB] hover:text-[#4DAEDB] text-gray-400 text-sm rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-[#1A7AAF] text-sm rounded-full border transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#0B7FD4] hover:text-[#0B7FD4]"
+              style={{ background: "#EBF5FC", borderColor: "#C8E4F4" }}
             >
               {chip}
             </button>
@@ -225,7 +219,7 @@ export default function SearchForm() {
 
       {/* Step-based loading UI */}
       {loading && (
-        <div className="bg-[#0A1628] border border-[#1E3A5F] rounded-2xl p-5 space-y-4">
+        <div className="bg-white border border-[#E8F4FC] rounded-[14px] p-5 space-y-3.5 shadow-sm">
           {STEP_LABELS.map((label, i) => (
             <StepIndicator key={i} status={stepStatuses[i]} label={label} />
           ))}
@@ -233,7 +227,7 @@ export default function SearchForm() {
       )}
 
       {error && (
-        <p className="text-red-400 text-sm text-center mt-3">{error}</p>
+        <p className="text-red-500 text-sm text-center mt-3 bg-red-50 border border-red-200 rounded-[10px] py-2">{error}</p>
       )}
     </div>
   );

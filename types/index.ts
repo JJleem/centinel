@@ -7,6 +7,16 @@ export interface GameData {
   genre: string;
   description: string;
   icon?: string;
+  screenshots?: string[];
+}
+
+export interface VisionResult {
+  coreInteraction: string;
+  visualHook: string;
+  colorPalette: string;
+  uiComplexity: number;
+  keyVisualElements: string[];
+  analyzedCount: number;
 }
 
 export interface TrendAnalysis {
@@ -30,6 +40,9 @@ export interface AdCopy {
   shortFormScript: string;
   appStoreDescription: string;
   targetKeywords: string[];
+  imagePrompt: string;
+  psychologicalTags: string[];
+  expectedCTR: number;
 }
 
 export interface AnalysisResult {
@@ -40,6 +53,7 @@ export interface AnalysisResult {
   adCopies: AdCopy[];
   createdAt: string;
   usedFallback?: boolean;
+  lang?: string;
 }
 
 export interface ScrapeResponse {

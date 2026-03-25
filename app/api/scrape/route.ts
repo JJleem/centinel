@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       num: 10,
       lang: "en",
       country: "us",
-      fullDetail: false,
+      fullDetail: true,
     });
 
     const games: GameData[] = results.map(
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
         summary?: string;
         description?: string;
         icon?: string;
+        screenshots?: string[];
       }) => ({
         title: app.title ?? "Unknown",
         appId: app.appId ?? "",
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
         genre: app.genre ?? "Casual",
         description: app.summary ?? app.description ?? "",
         icon: app.icon ?? "",
+        screenshots: (app.screenshots ?? []).slice(0, 3),
       })
     );
 

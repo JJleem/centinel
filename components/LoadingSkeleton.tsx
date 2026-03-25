@@ -1,14 +1,14 @@
 function SkeletonBox({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`bg-[#0A1628] rounded animate-pulse ${className}`}
+      className={`bg-[#E8F1FB] rounded animate-pulse ${className}`}
     />
   );
 }
 
 function CardSkeleton() {
   return (
-    <div className="bg-[#0A1628] border border-[#1E3A5F] rounded-2xl p-5 space-y-4">
+    <div className="bg-white border border-[#C5DFF5] rounded-2xl p-5 space-y-4">
       <div className="flex justify-between">
         <SkeletonBox className="h-4 w-16" />
         <SkeletonBox className="h-4 w-20" />
@@ -26,7 +26,7 @@ export default function LoadingSkeleton() {
   return (
     <div className="space-y-6">
       {/* Trend card skeleton */}
-      <div className="bg-[#0A1628] border border-[#1E3A5F] rounded-2xl p-6 space-y-4">
+      <div className="bg-white border border-[#C5DFF5] rounded-2xl p-6 space-y-4">
         <div className="flex gap-2">
           <SkeletonBox className="h-5 w-40" />
           <SkeletonBox className="h-5 w-16 ml-auto" />

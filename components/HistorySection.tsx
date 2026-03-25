@@ -21,35 +21,35 @@ export default function HistorySection() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto mt-10">
-      <p className="text-xs text-gray-600 mb-3 px-1">최근 분석</p>
+    <div className="w-full mb-10">
+      {/* Section title */}
+      <div className="flex items-center gap-3 mb-4 px-1">
+        <span
+          className="w-[3px] h-4 rounded-full shrink-0"
+          style={{ background: "linear-gradient(135deg, #0B7FD4, #6B4EFF)" }}
+        />
+        <p className="text-xs font-semibold text-[#0A1929] uppercase tracking-widest">최근 분석</p>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {history.map((item, i) => (
           <button
             key={i}
             onClick={() => handleClick(item)}
-            className="group text-left bg-[#0A1628] border border-[#1E3A5F] hover:border-[#4DAEDB]/50 rounded-xl p-4 transition-colors"
+            className="group text-left bg-white border border-[#E8F4FC] rounded-[14px] p-4 transition-all duration-200 hover:-translate-y-[3px] hover:shadow-lg hover:shadow-blue-100/60 hover:border-[#C8E4F4] shadow-sm"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[#4DAEDB] text-xs font-semibold truncate">
-                {item.query}
-              </span>
-              <span className="text-gray-700 text-[10px] shrink-0 ml-2">
-                {new Date(item.createdAt).toLocaleDateString("ko-KR", {
-                  month: "short",
-                  day: "numeric",
-                })}
+              <span className="text-[#0B7FD4] text-xs font-bold truncate">{item.query}</span>
+              <span className="text-[#4A6080] text-[10px] shrink-0 ml-2">
+                {new Date(item.createdAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
               </span>
             </div>
-            <p className="text-gray-500 text-xs leading-relaxed line-clamp-2">
+            <p className="text-[#4A6080] text-xs leading-relaxed line-clamp-2 mb-2">
               {item.insight.summary[0]}
             </p>
-            <div className="flex flex-wrap gap-1 mt-2">
+            <div className="flex flex-wrap gap-1">
               {item.insight.topKeywords.slice(0, 2).map((kw) => (
-                <span
-                  key={kw}
-                  className="px-1.5 py-0.5 bg-[#020810] border border-[#1E3A5F] text-gray-600 text-[10px] rounded-full"
-                >
+                <span key={kw} className="px-1.5 py-0.5 bg-[#EBF5FC] text-[#1A7AAF] text-[10px] rounded-full border border-[#C8E4F4]">
                   {kw}
                 </span>
               ))}

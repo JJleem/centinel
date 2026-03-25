@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #020810;
-  --foreground: #ffffff;
+  --background: #F8FBFF;
+  --foreground: #0A1929;
 }
 
 @theme inline {
@@ -19,48 +19,18 @@ body {
 }
 
 @media print {
-  /* Force dark theme colors in print */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-
-  /* Hide interactive / nav elements */
-  .no-print {
-    display: none !important;
-  }
-
-  /* Page setup */
-  @page {
-    size: A4;
-    margin: 12mm;
-  }
-
+  .no-print { display: none !important; }
+  @page { size: A4; margin: 12mm; }
   body {
-    background: #020810 !important;
-    color: #ffffff !important;
+    background: #F8FBFF !important;
+    color: #0A1929 !important;
   }
-
-  /* Prevent mid-card page breaks (both legacy and modern syntax) */
-  .pdf-card {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  /* Section headers start naturally without forced breaks */
-  .pdf-section {
-    page-break-before: auto;
-    break-before: auto;
-  }
-
-  /* Grid containers: allow page breaks between items, not inside */
-  .pdf-grid {
-    display: block;
-  }
-
-  .pdf-grid > * {
-    page-break-inside: avoid;
-    break-inside: avoid;
-    margin-bottom: 8px;
-  }
+  .pdf-card { page-break-inside: avoid; break-inside: avoid; }
+  .pdf-section { page-break-before: auto; break-before: auto; }
+  .pdf-grid { display: block; }
+  .pdf-grid > * { page-break-inside: avoid; break-inside: avoid; margin-bottom: 8px; }
 }

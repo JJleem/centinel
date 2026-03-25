@@ -8,9 +8,9 @@ export default function PdfDownload() {
   return (
     <button
       onClick={handlePrint}
-      className="no-print text-sm px-4 py-1.5 border border-[#1E3A5F] hover:border-[#4DAEDB] text-gray-400 hover:text-[#4DAEDB] rounded-lg transition-colors whitespace-nowrap"
+      className="no-print text-sm px-4 py-1.5 border border-[#E8F4FC] hover:border-[#C8E4F4] text-[#4A6080] hover:text-[#0B7FD4] rounded-[10px] transition-colors whitespace-nowrap bg-white"
     >
-      📄 PDF 저장
+      PDF 저장
     </button>
   );
 }

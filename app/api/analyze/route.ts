@@ -9,7 +9,8 @@ import {
 } from "@/types";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const MODEL = "claude-sonnet-4-20250514";
+const SONNET = "claude-sonnet-4-20250514";
+const HAIKU = "claude-haiku-4-5-20251001";
 
 // Robust JSON parser: cleans up common Claude output issues before giving up
 function parseJSON<T>(text: string, stage: string): T {
@@ -31,7 +32,7 @@ function parseJSON<T>(text: string, stage: string): T {
   try { return JSON.parse(recovered) as T; } catch { /* fall through */ }
 
   throw new Error(
-    `${stage}: JSON parse failed.\nReceived text (first 500 chars):\n${text.slice(0, 500)}`
+    `[JSON Parse Error] Stage: "${stage}"\nReason: All recovery attempts failed.\nReceived text (first 500 chars):\n${text.slice(0, 500)}`
   );
 }
 
@@ -40,7 +41,7 @@ const LANG_INSTRUCTION: Record<string, string> = {
   KO: "한국어로 답변해줘.",
 };
 
-// Stage 1: Trend Analyst
+// ── Agent 1: Trend Analyst (Sonnet) ────────────────────────────────────────
 async function analyzeTrends(games: GameData[], lang: string): Promise<TrendAnalysis> {
   const gameListText = games
     .map((g, i) =>
@@ -49,9 +50,9 @@ async function analyzeTrends(games: GameData[], lang: string): Promise<TrendAnal
     .join("\n\n");
 
   const message = await client.messages.create({
-    model: MODEL,
-    max_tokens: 500,
-    system: "Mobile game trend analyst. Extract patterns from game data. Respond in valid JSON only.",
+    model: SONNET,
+    max_tokens: 1000,
+    system: "Mobile game trend analyst. Extract patterns from game data. Output raw JSON only — no markdown, no code blocks, no explanation.",
     messages: [{
       role: "user",
       content: `Analyze these top mobile games and extract trends:\n\n${gameListText}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
@@ -65,18 +66,21 @@ async function analyzeTrends(games: GameData[], lang: string): Promise<TrendAnal
   });
 
   const text = message.content[0].type === "text" ? message.content[0].text : "";
-  return parseJSON<TrendAnalysis>(text, "Stage 1");
+  return parseJSON<TrendAnalysis>(text, "Agent 1: Trend Analyst");
 }
 
-// Stage 2: Insight Summarizer
-async function summarizeInsights(trendAnalysis: TrendAnalysis, lang: string): Promise<InsightSummary> {
+// ── Agent 2A: Insight Summarizer — Analytical variant (Haiku) ─────────────
+async function summarizeInsightsAnalytical(
+  trendAnalysis: TrendAnalysis,
+  lang: string
+): Promise<InsightSummary> {
   const message = await client.messages.create({
-    model: MODEL,
-    max_tokens: 800,
-    system: "Mobile gaming insight expert for UA marketers. Be concise. Respond in valid JSON only.",
+    model: HAIKU,
+    max_tokens: 1500,
+    system: "Mobile gaming insight expert for UA marketers. Focus on data-driven patterns, measurable market signals, and ROI-oriented opportunities. Be concise. Output raw JSON only — no markdown, no code blocks, no explanation.",
     messages: [{
       role: "user",
-      content: `Based on this trend analysis, create a rich insight summary:\n\nMechanics: ${trendAnalysis.mechanics.join(", ")}\nRevenue Models: ${trendAnalysis.revenueModels.join(", ")}\nKeywords: ${trendAnalysis.keywords.join(", ")}\nAnalysis: ${trendAnalysis.rawAnalysis}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
+      content: `Based on this trend analysis, create an analytical insight summary:\n\nMechanics: ${trendAnalysis.mechanics.join(", ")}\nRevenue Models: ${trendAnalysis.revenueModels.join(", ")}\nKeywords: ${trendAnalysis.keywords.join(", ")}\nAnalysis: ${trendAnalysis.rawAnalysis}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
 {
   "summary": ["insight 1", "insight 2", "insight 3", "insight 4", "insight 5"],
   "topKeywords": ["keyword1", "keyword2", "keyword3"],
@@ -88,18 +92,80 @@ async function summarizeInsights(trendAnalysis: TrendAnalysis, lang: string): Pr
   });
 
   const text = message.content[0].type === "text" ? message.content[0].text : "";
-  return parseJSON<InsightSummary>(text, "Stage 2");
+  return parseJSON<InsightSummary>(text, "Agent 2A: Insight (Analytical)");
 }
 
-// Stage 3: Ad Copywriter
-async function generateAdCopies(insight: InsightSummary, query: string, lang: string): Promise<AdCopy[]> {
+// ── Agent 2B: Insight Summarizer — Creative variant (Haiku) ──────────────
+async function summarizeInsightsCreative(
+  trendAnalysis: TrendAnalysis,
+  lang: string
+): Promise<InsightSummary> {
   const message = await client.messages.create({
-    model: MODEL,
-    max_tokens: 2000,
-    system: "Mobile game UA copywriter. Create conversion-optimized ad creatives. Respond in valid JSON only.",
+    model: HAIKU,
+    max_tokens: 1500,
+    system: "Mobile gaming insight expert for UA marketers. Focus on creative opportunities, emerging behavioral trends, and untapped audience segments. Be concise. Output raw JSON only — no markdown, no code blocks, no explanation.",
     messages: [{
       role: "user",
-      content: `Create 5 distinct ad copies for a hyper-casual game in the "${query}" space.\n\nMarket Insights:\n${insight.summary.join("\n")}\nTop Keywords: ${insight.topKeywords.join(", ")}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
+      content: `Based on this trend analysis, create a creative insight summary:\n\nMechanics: ${trendAnalysis.mechanics.join(", ")}\nRevenue Models: ${trendAnalysis.revenueModels.join(", ")}\nKeywords: ${trendAnalysis.keywords.join(", ")}\nAnalysis: ${trendAnalysis.rawAnalysis}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
+{
+  "summary": ["insight 1", "insight 2", "insight 3", "insight 4", "insight 5"],
+  "topKeywords": ["keyword1", "keyword2", "keyword3"],
+  "notableMechanics": ["mechanic1", "mechanic2", "mechanic3"],
+  "revenueModelTrends": ["trend1", "trend2"],
+  "marketOpportunity": "one key market opportunity for UA marketers"
+}`,
+    }],
+  });
+
+  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  return parseJSON<InsightSummary>(text, "Agent 2B: Insight (Creative)");
+}
+
+// ── Orchestrator: Synthesize best insight from ensemble (Sonnet) ──────────
+async function synthesizeInsight(
+  insightA: InsightSummary,
+  insightB: InsightSummary,
+  lang: string
+): Promise<InsightSummary> {
+  const message = await client.messages.create({
+    model: SONNET,
+    max_tokens: 2000,
+    system: "Senior mobile gaming strategist. You receive two parallel insight analyses from sub-agents and synthesize the strongest combined version — keeping the sharpest insights from each. Output raw JSON only — no markdown, no code blocks, no explanation.",
+    messages: [{
+      role: "user",
+      content: `Synthesize these two parallel insight analyses into one optimal version:\n\nAnalysis A (data-driven):\n${JSON.stringify(insightA)}\n\nAnalysis B (creative):\n${JSON.stringify(insightB)}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
+{
+  "summary": ["insight 1", "insight 2", "insight 3", "insight 4", "insight 5"],
+  "topKeywords": ["keyword1", "keyword2", "keyword3"],
+  "notableMechanics": ["mechanic1", "mechanic2", "mechanic3"],
+  "revenueModelTrends": ["trend1", "trend2"],
+  "marketOpportunity": "one key market opportunity for UA marketers"
+}`,
+    }],
+  });
+
+  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  return parseJSON<InsightSummary>(text, "Orchestrator: Insight Synthesis");
+}
+
+// ── Agent 3A: Ad Copywriter — Performance variant (Haiku) ─────────────────
+async function generateAdCopiesPerformance(
+  insight: InsightSummary,
+  query: string,
+  lang: string
+): Promise<AdCopy[]> {
+  const message = await client.messages.create({
+    model: HAIKU,
+    max_tokens: 3000,
+    system: `Mobile game UA copywriter specializing in performance marketing. Create high-CTR, conversion-optimized ad creatives with strong calls-to-action. Output raw JSON only — no markdown, no code blocks, no explanation.
+For each ad copy, generate these additional fields:
+imagePrompt: Midjourney/DALL-E 3 English image generation prompt. Format: "A [mood] mobile game advertisement thumbnail, [key visual elements], [colors], [composition], isometric 3D style, hyper-casual, clean UI --ar 9:16 --style raw --v 6". Always in English. Max 80 words.
+psychologicalTags: 2~3 psychological targeting tags matching the copy's tone and target audience. Choose from or create new ones based on: "🔥 승부욕 자극", "😌 스트레스 해소", "🧩 두뇌 자극", "😱 FOMO 유발", "✨ ASMR 만족감", "🏆 성취감", "🤔 호기심 폭발", "💪 도전 욕구", "😊 힐링", "⚡ 즉각 만족", "👥 사회적 증거", "🎯 집중력"
+expectedCTR: predicted CTR score 1~10 (one decimal). Base on genre/trend fit. The 6 copies must have different scores — highest 7~9, lowest 4~6.
+For tone #6 (Empathy/Storytelling): warm and emotional storytelling targeting office workers or people needing a short break. Hook starts from a relatable everyday situation (e.g. "퇴근길 지하철에서...", "점심시간 10분이 남았을 때"). Main copy frames the game as a small escape from daily life. Short-form script: relatable situation → gameplay → healing ending. Psychological tags must include "😌 일상 탈출" and/or "🤝 공감 유발". Image prompt: warm, cozy, soft-lit atmosphere.`,
+    messages: [{
+      role: "user",
+      content: `Create 6 distinct performance-focused ad copies for a hyper-casual game in the "${query}" space.\n\nMarket Insights:\n${insight.summary.join("\n")}\nTop Keywords: ${insight.topKeywords.join(", ")}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
 {
   "adCopies": [
     {
@@ -107,17 +173,99 @@ async function generateAdCopies(insight: InsightSummary, query: string, lang: st
       "mainCopy": "main ad copy (2-3 sentences)",
       "shortFormScript": "15-second video script narration",
       "appStoreDescription": "app store short description (max 80 chars)",
-      "targetKeywords": ["keyword1", "keyword2", "keyword3"]
+      "targetKeywords": ["keyword1", "keyword2", "keyword3"],
+      "imagePrompt": "Midjourney/DALL-E 3 English image prompt",
+      "psychologicalTags": ["태그1", "태그2"],
+      "expectedCTR": 7.5
     }
   ]
 }
 
-Make each of the 5 copies distinct in tone: 1) Excitement, 2) Challenge, 3) Curiosity, 4) FOMO, 5) Simplicity.`,
+Make each of the 6 copies distinct in tone: 1) Excitement, 2) Challenge, 3) Curiosity, 4) FOMO, 5) Simplicity, 6) Empathy/Storytelling.`,
     }],
   });
 
   const text = message.content[0].type === "text" ? message.content[0].text : "";
-  const parsed = parseJSON<{ adCopies: AdCopy[] }>(text, "Stage 3");
+  const parsed = parseJSON<{ adCopies: AdCopy[] }>(text, "Agent 3A: Ad Copy (Performance)");
+  return parsed.adCopies;
+}
+
+// ── Agent 3B: Ad Copywriter — Brand variant (Haiku) ──────────────────────
+async function generateAdCopiesBrand(
+  insight: InsightSummary,
+  query: string,
+  lang: string
+): Promise<AdCopy[]> {
+  const message = await client.messages.create({
+    model: HAIKU,
+    max_tokens: 3000,
+    system: `Mobile game UA copywriter specializing in brand storytelling. Create emotionally resonant, memorable ad creatives that build long-term player affinity. Output raw JSON only — no markdown, no code blocks, no explanation.
+For each ad copy, generate these additional fields:
+imagePrompt: Midjourney/DALL-E 3 English image generation prompt. Format: "A [mood] mobile game advertisement thumbnail, [key visual elements], [colors], [composition], isometric 3D style, hyper-casual, clean UI --ar 9:16 --style raw --v 6". Always in English. Max 80 words.
+psychologicalTags: 2~3 psychological targeting tags matching the copy's tone and target audience. Choose from or create new ones based on: "🔥 승부욕 자극", "😌 스트레스 해소", "🧩 두뇌 자극", "😱 FOMO 유발", "✨ ASMR 만족감", "🏆 성취감", "🤔 호기심 폭발", "💪 도전 욕구", "😊 힐링", "⚡ 즉각 만족", "👥 사회적 증거", "🎯 집중력"
+expectedCTR: predicted CTR score 1~10 (one decimal). Base on genre/trend fit. The 6 copies must have different scores — highest 7~9, lowest 4~6.
+For tone #6 (Empathy/Storytelling): warm and emotional storytelling targeting office workers or people needing a short break. Hook starts from a relatable everyday situation (e.g. "퇴근길 지하철에서...", "점심시간 10분이 남았을 때"). Main copy frames the game as a small escape from daily life. Short-form script: relatable situation → gameplay → healing ending. Psychological tags must include "😌 일상 탈출" and/or "🤝 공감 유발". Image prompt: warm, cozy, soft-lit atmosphere.`,
+    messages: [{
+      role: "user",
+      content: `Create 6 distinct brand-focused ad copies for a hyper-casual game in the "${query}" space.\n\nMarket Insights:\n${insight.summary.join("\n")}\nTop Keywords: ${insight.topKeywords.join(", ")}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
+{
+  "adCopies": [
+    {
+      "hook": "attention-grabbing opening line (max 10 words)",
+      "mainCopy": "main ad copy (2-3 sentences)",
+      "shortFormScript": "15-second video script narration",
+      "appStoreDescription": "app store short description (max 80 chars)",
+      "targetKeywords": ["keyword1", "keyword2", "keyword3"],
+      "imagePrompt": "Midjourney/DALL-E 3 English image prompt",
+      "psychologicalTags": ["태그1", "태그2"],
+      "expectedCTR": 7.5
+    }
+  ]
+}
+
+Make each of the 6 copies distinct in tone: 1) Excitement, 2) Challenge, 3) Curiosity, 4) FOMO, 5) Simplicity, 6) Empathy/Storytelling.`,
+    }],
+  });
+
+  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  const parsed = parseJSON<{ adCopies: AdCopy[] }>(text, "Agent 3B: Ad Copy (Brand)");
+  return parsed.adCopies;
+}
+
+// ── Orchestrator: Select best ad copies from ensemble (Sonnet) ────────────
+async function synthesizeAdCopies(
+  copiesA: AdCopy[],
+  copiesB: AdCopy[],
+  query: string,
+  lang: string
+): Promise<AdCopy[]> {
+  const allCopies = [...copiesA, ...copiesB];
+  const message = await client.messages.create({
+    model: SONNET,
+    max_tokens: 4000,
+    system: "Senior mobile game UA strategist. You receive 12 ad copies (6 performance-focused + 6 brand-focused) from sub-agents and select the best 6 — one per tone category. You may refine wording but keep each copy's core concept. Output raw JSON only — no markdown, no code blocks, no explanation.",
+    messages: [{
+      role: "user",
+      content: `From these 12 ad copies for "${query}", select and refine the best 6 (one per tone: Excitement, Challenge, Curiosity, FOMO, Simplicity, Empathy/Storytelling):\n\n${JSON.stringify(allCopies, null, 2)}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
+{
+  "adCopies": [
+    {
+      "hook": "...",
+      "mainCopy": "...",
+      "shortFormScript": "...",
+      "appStoreDescription": "...",
+      "targetKeywords": ["keyword1", "keyword2", "keyword3"],
+      "imagePrompt": "Keep or refine the imagePrompt from the selected copy (must remain in English)",
+      "psychologicalTags": ["keep tags from selected copy"],
+      "expectedCTR": 7.5
+    }
+  ]
+}`,
+    }],
+  });
+
+  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  const parsed = parseJSON<{ adCopies: AdCopy[] }>(text, "Orchestrator: Ad Copy Synthesis");
   return parsed.adCopies;
 }
 
@@ -144,13 +292,33 @@ export async function POST(req: NextRequest) {
       };
 
       try {
+        // ── Orchestrator Start ──────────────────────────────────────────
+        send({ event: "orchestrator_start", message: "오케스트레이터 시작" });
+
+        // ── Stage 1: Trend Analysis Agent (Sonnet) ─────────────────────
         const trendAnalysis = await analyzeTrends(games as GameData[], lang);
-        send({ step: 1, status: "done", message: "트렌드 분석 완료" });
+        send({ event: "analysis_done", message: "트렌드 분석 완료 (Sonnet)" });
 
-        const insight = await summarizeInsights(trendAnalysis, lang);
-        send({ step: 2, status: "done", message: "인사이트 요약 완료" });
+        // ── Stage 2: Insight Ensemble (2x Haiku, parallel) ────────────
+        const [insightA, insightB] = await Promise.all([
+          summarizeInsightsAnalytical(trendAnalysis, lang),
+          summarizeInsightsCreative(trendAnalysis, lang),
+        ]);
+        send({ event: "insights_ensemble_done", message: "인사이트 앙상블 완료 (Haiku ×2)" });
 
-        const adCopies = await generateAdCopies(insight, query, lang);
+        // ── Orchestrator: Synthesize best insight (Sonnet) ─────────────
+        const insight = await synthesizeInsight(insightA, insightB, lang);
+
+        // ── Stage 3: Ad Copy Ensemble (2x Haiku, parallel) ────────────
+        const [copiesA, copiesB] = await Promise.all([
+          generateAdCopiesPerformance(insight, query, lang),
+          generateAdCopiesBrand(insight, query, lang),
+        ]);
+        send({ event: "copies_ensemble_done", message: "광고 소재 앙상블 완료 (Haiku ×2)" });
+
+        // ── Orchestrator: Select best ad copies (Sonnet) ───────────────
+        const adCopies = await synthesizeAdCopies(copiesA, copiesB, query, lang);
+
         const result: AnalysisResult = {
           query,
           games: games as GameData[],
@@ -159,9 +327,9 @@ export async function POST(req: NextRequest) {
           adCopies,
           createdAt: new Date().toISOString(),
         };
-        send({ step: 3, status: "done", result });
+        send({ event: "final_selection_done", message: "최종 선별 완료", result });
       } catch (error) {
-        console.error("[analyze] Error:", error);
+        console.error("[analyze] Orchestrator error:", error);
         send({ error: String(error) });
       } finally {
         controller.close();
