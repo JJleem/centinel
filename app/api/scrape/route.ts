@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import fallbackData from "@/data/fallback.json";
 import { GameData, ScrapeResponse } from "@/types";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -25,49 +24,51 @@ export async function POST(req: NextRequest) {
       lang: "en",
       country: "us",
       fullDetail: true,
-      category: gplay.category.GAME,
     });
 
-    const games: GameData[] = results.map(
-      (app: {
-        title?: string;
-        appId?: string;
-        developer?: string;
-        score?: number;
-        installs?: string | number;
-        genre?: string;
-        summary?: string;
-        description?: string;
-        icon?: string;
-        screenshots?: string[];
-      }) => ({
-        title: app.title ?? "Unknown",
-        appId: app.appId ?? "",
-        developer: app.developer ?? "Unknown",
-        score: app.score ?? 0,
-        installs: normalizeInstalls(app.installs),
-        genre: app.genre ?? "Casual",
-        description: app.summary ?? app.description ?? "",
-        icon: app.icon ?? "",
-        screenshots: (app.screenshots ?? []).slice(0, 3),
-      })
-    );
+    const games: GameData[] = results
+      .filter((app: { genreId?: string }) => app.genreId?.startsWith("GAME"))
+      .map(
+        (app: {
+          title?: string;
+          appId?: string;
+          developer?: string;
+          score?: number;
+          installs?: string | number;
+          genre?: string;
+          summary?: string;
+          description?: string;
+          icon?: string;
+          screenshots?: string[];
+        }) => ({
+          title: app.title ?? "Unknown",
+          appId: app.appId ?? "",
+          developer: app.developer ?? "Unknown",
+          score: app.score ?? 0,
+          installs: normalizeInstalls(app.installs),
+          genre: app.genre ?? "Casual",
+          description: app.summary ?? app.description ?? "",
+          icon: app.icon ?? "",
+          screenshots: (app.screenshots ?? []).slice(0, 3),
+        })
+      );
 
     if (games.length >= 3) {
       const response: ScrapeResponse = { games, source: "scrape", usedFallback: false };
       return NextResponse.json(response);
     }
-    console.warn(`[scrape] Only ${games.length} results for "${query}", using fallback`);
+
+    console.warn(`[scrape] Only ${games.length} results for "${query}"`);
+    return NextResponse.json(
+      { error: "insufficient_results" },
+      { status: 422 }
+    );
   } catch (error: unknown) {
     const err = error as { message?: string; code?: string };
-    console.warn("[scrape] Google Play scraping failed, using fallback data");
-    console.log("[scrape] Error details:", err.message, err.code);
+    console.warn("[scrape] Google Play scraping failed:", err.message, err.code);
+    return NextResponse.json(
+      { error: "insufficient_results" },
+      { status: 422 }
+    );
   }
-
-  const response: ScrapeResponse = {
-    games: fallbackData as GameData[],
-    source: "fallback",
-    usedFallback: true,
-  };
-  return NextResponse.json(response);
 }

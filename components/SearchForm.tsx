@@ -4,11 +4,20 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const QUICK_CHIPS = [
+  "Supercent",
   "hyper casual",
   "hybrid casual",
   "Voodoo",
   "SayGames",
   "Azur Games",
+];
+
+const SUGGESTION_CHIPS = [
+  "Supercent",
+  "hyper casual",
+  "hybrid casual",
+  "Voodoo",
+  "SayGames",
 ];
 
 type Lang = "EN" | "KO";
@@ -62,6 +71,7 @@ export default function SearchForm() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [insufficientResults, setInsufficientResults] = useState(false);
   const [lang, setLang] = useState<Lang>("KO");
   const [stepStatuses, setStepStatuses] = useState<StepStatus[]>(INITIAL_STATUSES);
   const [mounted, setMounted] = useState(false);
@@ -77,6 +87,7 @@ export default function SearchForm() {
     if (!searchQuery.trim()) return;
     setLoading(true);
     setError("");
+    setInsufficientResults(false);
     setStepStatuses(["active", "waiting", "waiting", "waiting", "waiting"]);
 
     try {
@@ -86,7 +97,15 @@ export default function SearchForm() {
         body: JSON.stringify({ query: searchQuery }),
       });
       const scrapeData = await scrapeRes.json();
-      if (!scrapeRes.ok) throw new Error(scrapeData.error || "Scrape failed");
+      if (!scrapeRes.ok) {
+        if (scrapeData.error === "insufficient_results") {
+          setInsufficientResults(true);
+          setLoading(false);
+          setStepStatuses(INITIAL_STATUSES);
+          return;
+        }
+        throw new Error(scrapeData.error || "Scrape failed");
+      }
       setStep(0, "done");
       setStep(1, "active");
 
@@ -223,6 +242,26 @@ export default function SearchForm() {
           {STEP_LABELS.map((label, i) => (
             <StepIndicator key={i} status={stepStatuses[i]} label={label} />
           ))}
+        </div>
+      )}
+
+      {insufficientResults && (
+        <div className="mt-3 bg-amber-50 border border-amber-200 rounded-[10px] px-4 py-3">
+          <p className="text-amber-700 text-sm font-medium mb-2">
+            검색 결과가 부족하여 분석할 수 없습니다. 아래 검색어로 시도해보세요.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {SUGGESTION_CHIPS.map((chip) => (
+              <button
+                key={chip}
+                onClick={() => { setInsufficientResults(false); handleSubmit(chip); }}
+                className="px-3 py-1 text-sm rounded-full border transition-colors hover:border-[#0B7FD4] hover:text-[#0B7FD4]"
+                style={{ background: "#EBF5FC", borderColor: "#C8E4F4", color: "#1A7AAF" }}
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
