@@ -76,6 +76,16 @@ export default function HistoryPage() {
           )}
         </div>
 
+        {/* Prototype notice */}
+        <div className="flex items-start gap-3 px-4 py-3 rounded-[12px] border mb-6" style={{ background: "#F5F0FF", borderColor: "#D4C9FF" }}>
+          <span className="text-base shrink-0 mt-0.5">🔧</span>
+          <p className="text-xs text-[#6B4EFF] leading-relaxed">
+            <strong>프로토타입 안내</strong> — 현재 히스토리는 브라우저 localStorage에 최근 10개까지 저장됩니다.
+            프로덕션 전환 시 서버 DB 연동 및 사용자 인증(Google OAuth 등)을 도입하여 기기 간 동기화와
+            API 호출 보호를 구현할 예정입니다.
+          </p>
+        </div>
+
         {/* Empty state */}
         {mounted && history.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
