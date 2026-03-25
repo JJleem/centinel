@@ -79,6 +79,18 @@ export default function SearchForm() {
 
   useEffect(() => { setMounted(true); }, []);
 
+  // TrendCharts에서 게임 선택 시 자동 실행
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { query: q } = (e as CustomEvent<{ query: string }>).detail;
+      setQuery(q);
+      setTimeout(() => handleSubmit(q), 0);
+    };
+    window.addEventListener("centinel:autorun", handler);
+    return () => window.removeEventListener("centinel:autorun", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const setStep = (index: number, status: StepStatus) => {
     setStepStatuses(prev => prev.map((s, i) => i === index ? status : s));
   };

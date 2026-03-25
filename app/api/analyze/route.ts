@@ -14,12 +14,18 @@ const HAIKU = "claude-haiku-4-5-20251001";
 
 // Robust JSON parser: cleans up common Claude output issues before giving up
 function parseJSON<T>(text: string, stage: string): T {
-  const match = text.match(/\{[\s\S]*\}/);
+  // Step 0: strip markdown code fences (```json ... ``` or ``` ... ```)
+  const stripped = text
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/, "")
+    .trim();
+
+  const match = stripped.match(/\{[\s\S]*\}/);
   if (match) {
     try { return JSON.parse(match[0]) as T; } catch { /* fall through */ }
   }
 
-  const cleaned = (match?.[0] ?? text)
+  const cleaned = (match?.[0] ?? stripped)
     .replace(/,\s*([}\]])/g, "$1")
     .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?\s*:/g, '"$2":');
   try { return JSON.parse(cleaned) as T; } catch { /* fall through */ }

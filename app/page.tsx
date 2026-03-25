@@ -1,5 +1,6 @@
 import SearchForm from "@/components/SearchForm";
 import HistorySection from "@/components/HistorySection";
+import TrendChartsClient from "@/components/TrendChartsClient";
 import Link from "next/link";
 
 export default function Home() {
@@ -71,8 +72,15 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Trend Charts ── */}
+      <section className="px-4 pt-10 pb-2" style={{ background: "#F8FBFF" }}>
+        <div className="max-w-2xl mx-auto">
+          <TrendChartsClient />
+        </div>
+      </section>
+
       {/* ── History section ── */}
-      <section className="flex-1 px-4 pt-14 pb-10" style={{ background: "#F8FBFF" }}>
+      <section className="flex-1 px-4 pt-8 pb-10" style={{ background: "#F8FBFF" }}>
         <div className="max-w-2xl mx-auto">
           <HistorySection />
         </div>
