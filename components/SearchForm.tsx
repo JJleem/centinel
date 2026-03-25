@@ -254,7 +254,7 @@ export default function SearchForm() {
             {SUGGESTION_CHIPS.map((chip) => (
               <button
                 key={chip}
-                onClick={() => { setInsufficientResults(false); handleSubmit(chip); }}
+                onClick={() => { setInsufficientResults(false); setQuery(chip); handleSubmit(chip); }}
                 className="px-3 py-1 text-sm rounded-full border transition-colors hover:border-[#0B7FD4] hover:text-[#0B7FD4]"
                 style={{ background: "#EBF5FC", borderColor: "#C8E4F4", color: "#1A7AAF" }}
               >
