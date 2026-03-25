@@ -41,8 +41,8 @@ export default function Home() {
             style={{ background: "linear-gradient(135deg, #0B7FD4, #6B4EFF)" }}
           />
           <p className="text-[#4A6080] text-base max-w-sm mx-auto leading-relaxed">
-            경쟁 게임 트렌드를 자동 분석하고,<br />
-            AI가 즉시 광고 소재 5종을 생성합니다.
+            Google Play 게임 트렌드를 자동 분석하고,<br />
+            AI가 즉시 광고 소재 6종을 생성합니다.
           </p>
         </div>
 
