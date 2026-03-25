@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
       lang: "en",
       country: "us",
       fullDetail: true,
+      category: gplay.category.GAME,
     });
 
     const games: GameData[] = results.map(
