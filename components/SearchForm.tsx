@@ -236,6 +236,24 @@ export default function SearchForm() {
         </div>
       )}
 
+      {/* Info notices */}
+      {mounted && !loading && (
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-[10px] border flex-1" style={{ background: "#F0F7FF", borderColor: "#C8E4F4" }}>
+            <span className="text-base shrink-0">🎮</span>
+            <p className="text-xs text-[#1A7AAF] leading-snug">
+              Google Play <strong>게임 카테고리</strong>만 검색됩니다. 게임명 · 장르 · 퍼블리셔를 입력해주세요.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-[10px] border flex-1" style={{ background: "#F5F0FF", borderColor: "#D4C9FF" }}>
+            <span className="text-base shrink-0">⏱️</span>
+            <p className="text-xs text-[#6B4EFF] leading-snug">
+              분석에 <strong>1~3분</strong> 정도 소요됩니다. 페이지를 닫지 말아주세요.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Step-based loading UI */}
       {loading && (
         <div className="bg-white border border-[#E8F4FC] rounded-[14px] p-5 space-y-3.5 shadow-sm">
