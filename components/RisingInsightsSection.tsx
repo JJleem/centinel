@@ -48,14 +48,21 @@ export default function RisingInsightsSection({ insights, games, lang }: Props) 
   return (
     <div className="mb-8">
       {/* Section title */}
-      <div className="flex items-center gap-2 mb-4 px-1">
+      <div className="flex items-start gap-2 mb-4 px-1">
         <span
-          className="w-[3px] h-5 rounded-full shrink-0"
+          className="w-[3px] h-5 rounded-full shrink-0 mt-1"
           style={{ background: "linear-gradient(180deg, #0B7FD4, #6B4EFF)" }}
         />
-        <h2 className="text-lg font-bold text-[#0A1929]">
-          {lang === "EN" ? "Why These Games Are Popular" : "이 게임이 왜 인기인가"}
-        </h2>
+        <div>
+          <h2 className="text-lg font-bold text-[#0A1929]">
+            {lang === "EN" ? "Why These Games Are Popular" : "이 게임이 왜 인기인가"}
+          </h2>
+          <p className="text-xs text-[#4A6080] mt-0.5">
+            {lang === "EN"
+              ? "Individual analysis of top chart games — what makes each title succeed"
+              : "탑 차트에 진입한 게임 개별 분석 · 핵심 훅, 소셜 메커닉, 수익화 모델을 해부합니다"}
+          </p>
+        </div>
       </div>
 
       {/* Hero card */}

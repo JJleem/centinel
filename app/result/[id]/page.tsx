@@ -96,15 +96,24 @@ export default function SharedResultPage() {
             )}
 
             <div className="mb-8">
-              <div className="flex items-center gap-2 mb-2 px-1">
-                <span className="w-[3px] h-5 rounded-full shrink-0" style={{ background: "linear-gradient(180deg, #0B7FD4, #6B4EFF)" }} />
-                <h2 className="text-lg font-bold text-[#0A1929]">트렌드 인사이트</h2>
+              <div className="flex items-start gap-2 mb-2 px-1">
+                <span className="w-[3px] h-5 rounded-full shrink-0 mt-1" style={{ background: "linear-gradient(180deg, #0B7FD4, #6B4EFF)" }} />
+                <div>
+                  <h2 className="text-lg font-bold text-[#0A1929]">트렌드 인사이트</h2>
+                  <p className="text-xs text-[#4A6080] mt-0.5">수집된 게임 전체를 앙상블 분석 · 장르 패턴, 수익 모델, 시장 기회를 도출합니다</p>
+                </div>
               </div>
               <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} resultId={id} visionResult={result.visionResult} />
             </div>
 
             <div className="mb-10">
-              <div className="mb-4"><SectionTitle>광고 소재 6종</SectionTitle></div>
+              <div className="flex items-start gap-2 mb-4 px-1">
+                <span className="w-[3px] h-5 rounded-full shrink-0 mt-1" style={{ background: "linear-gradient(180deg, #0B7FD4, #6B4EFF)" }} />
+                <div>
+                  <h2 className="text-lg font-bold text-[#0A1929]">광고 소재 6종</h2>
+                  <p className="text-xs text-[#4A6080] mt-0.5">트렌드 인사이트 기반으로 AI가 생성한 참고용 초안 · 톤별 6종 (흥미·도전·호기심·FOMO·단순·공감)</p>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {result.adCopies.map((copy, i) => (
                   <AdCopyCard key={i} adCopy={copy} index={i} />
