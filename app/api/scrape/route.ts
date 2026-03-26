@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GameData, ScrapeResponse } from "@/types";
+import { GameData, ScrapeResponse, SimilarGame } from "@/types";
 import { supabase } from "@/lib/supabase";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -159,7 +159,26 @@ export async function POST(req: NextRequest) {
         }
       } catch { /* non-critical */ }
 
-      const response: ScrapeResponse = { games, source: "scrape", usedFallback: false };
+      // Fetch similar games when appId provided (chart click), non-critical
+      let similarGames: SimilarGame[] = [];
+      if (appId) {
+        try {
+          const similarList = await gplay.similar({ appId, lang: "en", country: "us" });
+          const analyzedIds = new Set(games.map((g) => g.appId));
+          similarGames = (similarList as { appId?: string; title?: string; developer?: string; icon?: string; score?: number }[])
+            .filter((a) => a.appId && !analyzedIds.has(a.appId))
+            .slice(0, 10)
+            .map((a) => ({
+              appId: a.appId!,
+              title: a.title ?? "Unknown",
+              developer: a.developer ?? "",
+              icon: a.icon ?? "",
+              score: a.score ?? 0,
+            }));
+        } catch { /* non-critical */ }
+      }
+
+      const response: ScrapeResponse = { games, source: "scrape", usedFallback: false, similarGames: similarGames.length > 0 ? similarGames : undefined };
       return NextResponse.json(response);
     }
 

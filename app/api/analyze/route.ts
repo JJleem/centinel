@@ -8,6 +8,7 @@ import {
   AnalysisResult,
   RisingInsight,
   BreakoutCandidate,
+  SimilarGame,
 } from "@/types";
 import { supabase } from "@/lib/supabase";
 
@@ -396,7 +397,7 @@ async function findBreakoutCandidates(analyzedAppIds: string[]): Promise<Breakou
 }
 
 export async function POST(req: NextRequest) {
-  const { query, games, lang = "EN" } = await req.json();
+  const { query, games, lang = "EN", similarGames } = await req.json();
 
   if (!query || !games || !Array.isArray(games)) {
     return NextResponse.json({ error: "query and games are required" }, { status: 400 });
@@ -462,6 +463,7 @@ export async function POST(req: NextRequest) {
           insight,
           adCopies,
           risingInsights: risingInsights.length > 0 ? risingInsights : undefined,
+          similarGames: (similarGames as SimilarGame[] | undefined)?.length ? similarGames : undefined,
           breakoutCandidates: breakoutCandidates.length > 0 ? breakoutCandidates : undefined,
           createdAt: new Date().toISOString(),
         };
