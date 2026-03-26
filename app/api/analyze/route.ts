@@ -423,7 +423,11 @@ export async function POST(req: NextRequest) {
         send({ event: "orchestrator_start", message: "오케스트레이터 시작" });
 
         // ── Stage 1: Trend Analysis + Why Chart (parallel) ────────────
-        const chartGames = (games as GameData[]).filter((g) => g.chartRank != null);
+        // Only take the top-ranked chart game to avoid showing multiple "왜 인기인가" cards
+        const chartGames = (games as GameData[])
+          .filter((g) => g.chartRank != null)
+          .sort((a, b) => (a.chartRank ?? 99) - (b.chartRank ?? 99))
+          .slice(0, 1);
         const [trendAnalysis, risingInsights] = await Promise.all([
           analyzeTrends(games as GameData[], lang),
           chartGames.length > 0 ? analyzeWhyChart(chartGames, lang) : Promise.resolve([]),
