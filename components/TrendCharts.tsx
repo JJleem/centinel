@@ -35,6 +35,21 @@ export default function TrendCharts() {
   const [error, setError] = useState(false);
   const [fetchedAt, setFetchedAt] = useState<string>("");
   const [surgeMessage, setSurgeMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
+
+  const saveSnapshot = () => {
+    setSaving(true);
+    setSaveMsg("");
+    fetch("/api/charts/save", { method: "POST" })
+      .then((r) => r.json())
+      .then((d) => {
+        setSaveMsg(d.ok ? "저장 완료 ✓" : "저장 실패");
+        setTimeout(() => setSaveMsg(""), 3000);
+      })
+      .catch(() => setSaveMsg("저장 실패"))
+      .finally(() => setSaving(false));
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -105,6 +120,14 @@ export default function TrendCharts() {
               {fetchedAt} 기준
             </span>
           )}
+          <button
+            onClick={saveSnapshot}
+            disabled={saving}
+            className="text-[10px] px-2 py-0.5 rounded-[6px] border transition-colors disabled:opacity-50"
+            style={{ borderColor: "#C8E4F4", color: saving ? "#C8E4F4" : "#0B7FD4" }}
+          >
+            {saving ? "저장중..." : saveMsg || "스냅샷 저장"}
+          </button>
         </div>
 
         {/* Tabs */}
