@@ -171,8 +171,11 @@ export default function SearchForm() {
         if (saveRes.ok) {
           const { id } = await saveRes.json();
           resultId = id;
+        } else {
+          const errBody = await saveRes.json().catch(() => ({}));
+          console.error("[history save] failed:", saveRes.status, errBody);
         }
-      } catch { /* non-critical */ }
+      } catch (e) { console.error("[history save] exception:", e); }
 
       // Keep localStorage for immediate navigation
       localStorage.setItem("centinel_current", JSON.stringify(resultWithFallback));
