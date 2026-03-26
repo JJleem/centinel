@@ -19,55 +19,56 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const searchResults = await gplay.search({
+    // Search without fullDetail to avoid 404 crashes from individual apps
+    const searchList = await gplay.search({
       term: query,
       num: 10,
       lang: "en",
       country: "us",
-      fullDetail: true,
     });
 
-    // If appId provided (from chart click) and search returns < 3 GAME results,
+    // Fetch full details per-app in parallel, ignoring individual 404s
+    const detailResults = await Promise.allSettled(
+      searchList.map((r: { appId: string }) =>
+        gplay.app({ appId: r.appId, lang: "en", country: "us" })
+      )
+    );
+    let rawResults: unknown[] = detailResults
+      .filter((r) => r.status === "fulfilled")
+      .map((r) => (r as PromiseFulfilledResult<unknown>).value);
+
+    // If appId provided (from chart click) and still < 3 GAME results,
     // fetch the app itself + similar games to pad results
-    let rawResults = searchResults;
-    if (appId && searchResults.filter((a: { genreId?: string }) => a.genreId?.startsWith("GAME")).length < 3) {
-      try {
-        const [appDetail, similar] = await Promise.allSettled([
-          gplay.app({ appId, lang: "en", country: "us" }),
-          gplay.similar({ appId, lang: "en", country: "us", fullDetail: true }),
-        ]);
-        const existingIds = new Set(searchResults.map((a: { appId?: string }) => a.appId));
-        const extras: unknown[] = [];
-        if (appDetail.status === "fulfilled" && !existingIds.has(appDetail.value?.appId)) {
-          extras.push(appDetail.value);
-          existingIds.add(appDetail.value?.appId);
-        }
-        if (similar.status === "fulfilled") {
-          for (const a of similar.value) {
-            if (!existingIds.has((a as { appId?: string }).appId)) extras.push(a);
-          }
-        }
-        rawResults = [...searchResults, ...extras];
-      } catch { /* fallback to search results */ }
+    if (appId && rawResults.filter((a) => (a as { genreId?: string }).genreId?.startsWith("GAME")).length < 3) {
+      const existingIds = new Set(rawResults.map((a) => (a as { appId?: string }).appId));
+      const [appDetail, similar] = await Promise.allSettled([
+        gplay.app({ appId, lang: "en", country: "us" }),
+        gplay.similar({ appId, lang: "en", country: "us" }),
+      ]);
+      if (appDetail.status === "fulfilled" && !existingIds.has(appDetail.value?.appId)) {
+        rawResults = [appDetail.value, ...rawResults];
+        existingIds.add(appDetail.value?.appId);
+      }
+      if (similar.status === "fulfilled") {
+        const extras = (similar.value as { appId?: string }[]).filter((a) => !existingIds.has(a.appId));
+        const detailedExtras = await Promise.allSettled(
+          extras.slice(0, 15).map((a) => gplay.app({ appId: a.appId, lang: "en", country: "us" }))
+        );
+        rawResults = [
+          ...rawResults,
+          ...detailedExtras.filter((r) => r.status === "fulfilled").map((r) => (r as PromiseFulfilledResult<unknown>).value),
+        ];
+      }
     }
 
-    const results = rawResults;
-
-    const games: GameData[] = results
-      .filter((app: { genreId?: string }) => app.genreId?.startsWith("GAME"))
-      .map(
-        (app: {
-          title?: string;
-          appId?: string;
-          developer?: string;
-          score?: number;
-          installs?: string | number;
-          genre?: string;
-          summary?: string;
-          description?: string;
-          icon?: string;
-          screenshots?: string[];
-        }) => ({
+    type RawApp = {
+      title?: string; appId?: string; developer?: string; score?: number;
+      installs?: string | number; genre?: string; genreId?: string;
+      summary?: string; description?: string; icon?: string; screenshots?: string[];
+    };
+    const games: GameData[] = (rawResults as RawApp[])
+      .filter((app) => app.genreId?.startsWith("GAME"))
+      .map((app) => ({
           title: app.title ?? "Unknown",
           appId: app.appId ?? "",
           developer: app.developer ?? "Unknown",
