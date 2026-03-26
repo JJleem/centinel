@@ -158,11 +158,25 @@ export default function SearchForm() {
 
       if (!finalResult) throw new Error("분석 결과를 받지 못했습니다");
 
-      const history = JSON.parse(localStorage.getItem("centinel_history") || "[]");
       const resultWithFallback = { ...finalResult, usedFallback: scrapeData.usedFallback ?? false, lang };
-      history.unshift(resultWithFallback);
-      localStorage.setItem("centinel_history", JSON.stringify(history.slice(0, 10)));
+
+      // Save to DB (get UUID for share link)
+      let resultId: string | null = null;
+      try {
+        const saveRes = await fetch("/api/history", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(resultWithFallback),
+        });
+        if (saveRes.ok) {
+          const { id } = await saveRes.json();
+          resultId = id;
+        }
+      } catch { /* non-critical */ }
+
+      // Keep localStorage for immediate navigation
       localStorage.setItem("centinel_current", JSON.stringify(resultWithFallback));
+      if (resultId) localStorage.setItem("centinel_current_id", resultId);
 
       router.push("/result");
     } catch (err) {

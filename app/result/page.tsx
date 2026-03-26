@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useCallback } from "react";
 import TrendCard from "@/components/TrendCard";
 import AdCopyCard from "@/components/AdCopyCard";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
@@ -24,9 +25,20 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 export default function ResultPage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => {
     const current = localStorage.getItem("centinel_current");
     if (current) setResult(JSON.parse(current));
+  }, []);
+
+  const copyShareLink = useCallback(() => {
+    const id = localStorage.getItem("centinel_current_id");
+    if (!id) return;
+    navigator.clipboard.writeText(`${window.location.origin}/result/${id}`).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   }, []);
 
   return (
@@ -52,6 +64,12 @@ export default function ResultPage() {
           <div className="hidden sm:contents">
             {result && <ExportButtons result={result} />}
             <PdfDownload />
+            <button
+              onClick={copyShareLink}
+              className="text-sm px-3 py-1.5 border border-[#E8F4FC] hover:border-[#C8E4F4] text-[#4A6080] hover:text-[#0B7FD4] rounded-[10px] transition-colors whitespace-nowrap"
+            >
+              {copied ? "✓ 복사됨" : "🔗 공유 링크"}
+            </button>
           </div>
           <Link
             href="/"

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type Tab = "rising" | "global" | "casual";
+type Tab = "rising" | "global" | "casual" | "surge";
 
 interface ChartGame {
   title: string;
@@ -11,27 +11,33 @@ interface ChartGame {
   score: number;
   icon: string;
   genre: string;
+  rankChange?: number;
 }
 
 const TABS: { key: Tab; label: string }[] = [
-  { key: "global", label: "🏆 글로벌 탑" },
-  { key: "rising", label: "💰 매출 탑" },
-  { key: "casual", label: "🎮 캐주얼 탑" },
+  { key: "surge", label: "급상승" },
+  { key: "global", label: "글로벌 탑" },
+  { key: "rising", label: "매출 탑" },
+  { key: "casual", label: "캐주얼 탑" },
 ];
 
 export default function TrendCharts() {
-  const [activeTab, setActiveTab] = useState<Tab>("global");
+  const [activeTab, setActiveTab] = useState<Tab>("surge");
   const [games, setGames] = useState<ChartGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [fetchedAt, setFetchedAt] = useState<string>("");
+  const [surgeMessage, setSurgeMessage] = useState("");
 
   useEffect(() => {
     setLoading(true);
     setError(false);
     setGames([]);
+    setSurgeMessage("");
 
-    fetch(`/api/charts?tab=${activeTab}`)
+    const url = activeTab === "surge" ? "/api/charts/rising" : `/api/charts?tab=${activeTab}`;
+
+    fetch(url)
       .then((r) => r.json())
       .then((data) => {
         if (data.games) {
@@ -42,7 +48,15 @@ export default function TrendCharts() {
               hour: "numeric", minute: "2-digit", hour12: true,
             })
           );
-        } else setError(true);
+          if (data.snapshotAge) {
+            setSurgeMessage(`${data.snapshotAge}분 전 대비 순위 상승`);
+          }
+        } else if (data.message) {
+          setSurgeMessage(data.message);
+          setError(true);
+        } else {
+          setError(true);
+        }
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
@@ -117,7 +131,7 @@ export default function TrendCharts() {
 
         {!loading && error && (
           <div className="col-span-4 text-center py-6 text-[#4A6080] text-sm">
-            차트를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+            {surgeMessage || "차트를 불러오지 못했습니다. 잠시 후 다시 시도해주세요."}
           </div>
         )}
 
@@ -163,11 +177,15 @@ export default function TrendCharts() {
                 >
                   {game.title}
                 </div>
-                <div
-                  className="text-[9px] sm:text-[10px] truncate mt-0.5"
-                  style={{ color: "#4A6080" }}
-                >
-                  {game.score > 0 ? `⭐ ${game.score.toFixed(1)}` : game.developer}
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className="text-[9px] sm:text-[10px] truncate" style={{ color: "#4A6080" }}>
+                    {game.score > 0 ? `⭐ ${game.score.toFixed(1)}` : game.developer}
+                  </span>
+                  {game.rankChange != null && (
+                    <span className="text-[9px] font-bold shrink-0" style={{ color: "#10B981" }}>
+                      ▲{game.rankChange}
+                    </span>
+                  )}
                 </div>
               </div>
 

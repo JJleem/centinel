@@ -2,27 +2,31 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AnalysisResult } from "@/types";
+
+interface HistoryItem {
+  id: string;
+  query: string;
+  insight: { summary: string[]; topKeywords: string[] };
+  created_at: string;
+}
 
 export default function HistorySection() {
-  const [history, setHistory] = useState<AnalysisResult[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const router = useRouter();
 
   useEffect(() => {
-    const raw = localStorage.getItem("centinel_history");
-    if (raw) setHistory(JSON.parse(raw).slice(0, 3));
+    fetch("/api/history")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.history) setHistory(data.history.slice(0, 3));
+      })
+      .catch(() => {});
   }, []);
 
   if (history.length === 0) return null;
 
-  const handleClick = (item: AnalysisResult) => {
-    localStorage.setItem("centinel_current", JSON.stringify(item));
-    router.push("/result");
-  };
-
   return (
     <div className="w-full mb-10">
-      {/* Section title */}
       <div className="flex items-center gap-3 mb-4 px-1">
         <span
           className="w-[3px] h-4 rounded-full shrink-0"
@@ -32,16 +36,16 @@ export default function HistorySection() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {history.map((item, i) => (
+        {history.map((item) => (
           <button
-            key={i}
-            onClick={() => handleClick(item)}
+            key={item.id}
+            onClick={() => router.push(`/result/${item.id}`)}
             className="group text-left bg-white border border-[#E8F4FC] rounded-[14px] p-4 transition-all duration-200 hover:-translate-y-[3px] hover:shadow-lg hover:shadow-blue-100/60 hover:border-[#C8E4F4] shadow-sm"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-[#0B7FD4] text-xs font-bold truncate">{item.query}</span>
               <span className="text-[#4A6080] text-[10px] shrink-0 ml-2">
-                {new Date(item.createdAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
+                {new Date(item.created_at).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
               </span>
             </div>
             <p className="text-[#4A6080] text-xs leading-relaxed line-clamp-2 mb-2">

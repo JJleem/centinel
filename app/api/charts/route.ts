@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const gplay = require("google-play-scraper").default;
@@ -50,6 +51,27 @@ export async function GET(req: NextRequest) {
         genre: app.genre ?? "Game",
       })
     );
+
+    // Save snapshot to DB (fire-and-forget, non-critical)
+    try {
+      const snapshotRows = games.map((g, i) => ({
+        app_id: g.appId,
+        title: g.title,
+        developer: g.developer,
+        rank: i + 1,
+        collection: config.collection,
+        category: config.category,
+        score: g.score,
+        icon: g.icon,
+        genre: g.genre,
+        fetched_at: new Date().toISOString(),
+      }));
+      supabase.from("chart_snapshots").insert(snapshotRows).then(({ error: dbErr }) => {
+        if (dbErr) console.error("[charts] snapshot save failed:", dbErr.message);
+      });
+    } catch (dbErr) {
+      console.error("[charts] snapshot init error:", dbErr);
+    }
 
     return NextResponse.json({ games });
   } catch (error: unknown) {
