@@ -14,20 +14,6 @@ interface Props {
   visionResult?: import("@/types").VisionResult | null;
 }
 
-function GameIconStrip({ games }: { games: GameData[] }) {
-  return (
-    <div className="flex items-center mb-5">
-      <div className="flex items-center">
-        {games.map((game, i) => (
-          <GameIcon key={i} game={game} index={i} />
-        ))}
-      </div>
-      <span className="ml-3 text-xs text-[#4A6080] shrink-0">
-        +{games.length}개 게임 분석
-      </span>
-    </div>
-  );
-}
 
 function GameIcon({ game, index }: { game: GameData; index: number }) {
   const [failed, setFailed] = useState(false);
@@ -79,14 +65,22 @@ export default function TrendCard({ insight, query, usedFallback, games, lang, r
         </div>
       )}
 
-      <div className="flex items-center gap-2 mb-4">
-        <span className="ml-auto text-xs text-[#4A6080] bg-[#EBF5FC] px-2 py-1 rounded-full border border-[#C8E4F4]">
+      {/* Game icons + query badge on same row */}
+      <div className="flex items-center mb-5">
+        {games && games.length > 0 && (
+          <>
+            <div className="flex items-center">
+              {games.map((game, i) => (
+                <GameIcon key={i} game={game} index={i} />
+              ))}
+            </div>
+            <span className="ml-3 text-xs text-[#4A6080] shrink-0">+{games.length}개 게임 분석</span>
+          </>
+        )}
+        <span className="ml-auto text-xs text-[#4A6080] bg-[#EBF5FC] px-2 py-1 rounded-full border border-[#C8E4F4] shrink-0">
           {query}
         </span>
       </div>
-
-      {/* Game icons */}
-      {games && games.length > 0 && <GameIconStrip games={games} />}
 
       {/* Top keywords */}
       <div className="flex flex-wrap gap-2 mb-5">
