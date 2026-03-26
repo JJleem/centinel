@@ -302,7 +302,7 @@ async function analyzeWhyChart(
     system: "Mobile game market analyst. Explain WHY each game is popular in Google Play charts. Be specific — cover gameplay hook, social mechanics, monetization fit. Output raw JSON only.",
     messages: [{
       role: "user",
-      content: `These games are currently in Google Play charts:\n\n${gameList}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nFor each game, write 2-3 sentences covering: core gameplay hook, social/viral mechanic, and why it resonates with today's mobile audience.\n\nRespond with JSON:\n{\n  "insights": [\n    { "appId": "com.example", "reason": "..." }\n  ]\n}`,
+      content: `These games are currently in Google Play charts:\n\n${gameList}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nFor each game, write 2-3 sentences explaining why it's charting. Cover whichever of these apply: core gameplay hook, retention driver, social/viral mechanic (skip if not applicable), monetization fit, and why it resonates with today's audience. Only mention what actually applies to that specific game.\n\nRespond with JSON:\n{\n  "insights": [\n    { "appId": "com.example", "reason": "..." }\n  ]\n}`,
     }],
   });
 

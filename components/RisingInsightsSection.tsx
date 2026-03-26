@@ -59,8 +59,8 @@ export default function RisingInsightsSection({ insights, games, lang }: Props) 
           </h2>
           <p className="text-xs text-[#4A6080] mt-0.5">
             {lang === "EN"
-              ? "Individual analysis of top chart games — what makes each title succeed"
-              : "탑 차트에 진입한 게임 개별 분석 · 핵심 훅, 소셜 메커닉, 수익화 모델을 해부합니다"}
+              ? "Individual breakdown of top chart games — gameplay hook, retention driver, and why it resonates now"
+              : "탑 차트 게임 개별 분석 · 게임플레이 훅, 리텐션 동인, 지금 이 시점에 뜨는 이유를 설명합니다"}
           </p>
         </div>
       </div>
