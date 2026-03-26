@@ -28,15 +28,27 @@ export async function POST(req: NextRequest) {
     });
 
     // If appId provided (from chart click) and search returns < 3 GAME results,
-    // enrich with similar games
+    // fetch the app itself + similar games to pad results
     let rawResults = searchResults;
     if (appId && searchResults.filter((a: { genreId?: string }) => a.genreId?.startsWith("GAME")).length < 3) {
       try {
-        const similar = await gplay.similar({ appId, lang: "en", country: "us", fullDetail: true });
+        const [appDetail, similar] = await Promise.allSettled([
+          gplay.app({ appId, lang: "en", country: "us" }),
+          gplay.similar({ appId, lang: "en", country: "us", fullDetail: true }),
+        ]);
         const existingIds = new Set(searchResults.map((a: { appId?: string }) => a.appId));
-        const extras = similar.filter((a: { appId?: string }) => !existingIds.has(a.appId));
+        const extras: unknown[] = [];
+        if (appDetail.status === "fulfilled" && !existingIds.has(appDetail.value?.appId)) {
+          extras.push(appDetail.value);
+          existingIds.add(appDetail.value?.appId);
+        }
+        if (similar.status === "fulfilled") {
+          for (const a of similar.value) {
+            if (!existingIds.has((a as { appId?: string }).appId)) extras.push(a);
+          }
+        }
         rawResults = [...searchResults, ...extras];
-      } catch { /* similar API failed, proceed with search results */ }
+      } catch { /* fallback to search results */ }
     }
 
     const results = rawResults;
