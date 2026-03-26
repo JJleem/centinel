@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import TrendCard from "@/components/TrendCard";
 import AdCopyCard from "@/components/AdCopyCard";
+import GameCharts from "@/components/GameCharts";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { AnalysisResult } from "@/types";
 
@@ -83,6 +84,10 @@ export default function SharedResultPage() {
 
             <div className="mb-8">
               <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} resultId={id} visionResult={result.visionResult} />
+            </div>
+
+            <div className="mb-8">
+              <GameCharts games={result.games} />
             </div>
 
             <div className="mb-10">
