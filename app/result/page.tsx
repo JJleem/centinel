@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCallback } from "react";
 import TrendCard from "@/components/TrendCard";
+import RisingInsightsSection from "@/components/RisingInsightsSection";
 import AdCopyCard from "@/components/AdCopyCard";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import PdfDownload from "@/components/PdfDownload";
@@ -130,6 +131,10 @@ export default function ResultPage() {
               <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} resultId={typeof window !== "undefined" ? localStorage.getItem("centinel_current_id") : null} />
             </div>
 
+            {result.risingInsights && result.risingInsights.length > 0 && (
+              <RisingInsightsSection insights={result.risingInsights} games={result.games} lang={result.lang} />
+            )}
+
             {/* Ad copies */}
             <div className="pdf-section mb-10">
               <div className="flex items-start justify-between mb-2">
@@ -175,14 +180,23 @@ export default function ResultPage() {
                     <div className="min-w-0 flex-1">
                       <p className="text-[#0A1929] font-semibold text-sm truncate">{game.title}</p>
                       <p className="text-[#4A6080] text-xs truncate">{game.developer}</p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         <span className="text-xs" style={{ color: "#F5A623" }}>⭐ {game.score.toFixed(1)}</span>
-                        <span
-                          className="px-1.5 py-0.5 text-[10px] rounded-full border truncate"
-                          style={{ background: "#EBF5FC", color: "#0B7FD4", borderColor: "#C8E4F4" }}
-                        >
-                          {game.genre}
-                        </span>
+                        {game.chartRank != null && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full" style={{ background: "#EBF5FC", color: "#0B7FD4" }}>
+                            {game.chartLabel ?? "글로벌탑"} {game.chartRank}위
+                          </span>
+                        )}
+                        {(game.rankChange ?? 0) > 0 && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full" style={{ background: "#F0FDF4", color: "#10B981" }}>
+                            ▲{game.rankChange}
+                          </span>
+                        )}
+                        {(game.rankChange ?? 0) < 0 && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full" style={{ background: "#FFF7F7", color: "#EF4444" }}>
+                            ▼{Math.abs(game.rankChange!)}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

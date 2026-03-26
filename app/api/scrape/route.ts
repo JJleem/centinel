@@ -82,57 +82,68 @@ export async function POST(req: NextRequest) {
       );
 
     if (games.length >= 3) {
-      // Enrich with rankChange from DB (non-critical)
+      // Enrich with chartRank/chartLabel/rankChange from DB (non-critical)
       try {
         const appIds = games.map((g) => g.appId);
 
-        // Get two most recent distinct snapshot times
-        const { data: times } = await supabase
-          .from("chart_snapshots")
-          .select("fetched_at")
-          .eq("collection", "TOP_FREE")
-          .eq("category", "GAME")
-          .order("fetched_at", { ascending: false })
-          .limit(200);
+        const CHARTS = [
+          { collection: "TOP_FREE",  category: "GAME",         label: "글로벌탑" },
+          { collection: "GROSSING",  category: "GAME",         label: "매출탑"   },
+          { collection: "TOP_FREE",  category: "GAME_CASUAL",  label: "캐주얼탑" },
+        ];
 
-        if (times && times.length > 0) {
+        for (const chart of CHARTS) {
+          // Get two most recent distinct snapshot times for this chart
+          const { data: times } = await supabase
+            .from("chart_snapshots")
+            .select("fetched_at")
+            .eq("collection", chart.collection)
+            .eq("category", chart.category)
+            .order("fetched_at", { ascending: false })
+            .limit(200);
+
+          if (!times || times.length === 0) continue;
+
           const latest = times[0].fetched_at;
           const latestDate = new Date(latest);
           const previous = times.find(
             (t) => new Date(t.fetched_at).getTime() < latestDate.getTime() - 60 * 60 * 1000
           );
 
-          // Always get latest ranks (chartRank)
           const { data: newSnap } = await supabase
             .from("chart_snapshots")
             .select("app_id, rank")
+            .eq("collection", chart.collection)
+            .eq("category", chart.category)
             .eq("fetched_at", latest)
             .in("app_id", appIds);
 
-          if (newSnap) {
-            const newRankMap = new Map(newSnap.map((r) => [r.app_id, r.rank]));
+          if (!newSnap) continue;
+          const newRankMap = new Map(newSnap.map((r) => [r.app_id, r.rank]));
 
-            // Get previous snapshot if available (for rankChange)
-            let oldRankMap = new Map<string, number>();
-            if (previous) {
-              const { data: oldSnap } = await supabase
-                .from("chart_snapshots")
-                .select("app_id, rank")
-                .eq("fetched_at", previous.fetched_at)
-                .in("app_id", appIds);
-              if (oldSnap) oldRankMap = new Map(oldSnap.map((r) => [r.app_id, r.rank]));
-            }
+          let oldRankMap = new Map<string, number>();
+          if (previous) {
+            const { data: oldSnap } = await supabase
+              .from("chart_snapshots")
+              .select("app_id, rank")
+              .eq("collection", chart.collection)
+              .eq("category", chart.category)
+              .eq("fetched_at", previous.fetched_at)
+              .in("app_id", appIds);
+            if (oldSnap) oldRankMap = new Map(oldSnap.map((r) => [r.app_id, r.rank]));
+          }
 
-            for (const game of games) {
-              const newRank = newRankMap.get(game.appId);
-              if (newRank != null) {
-                game.chartRank = newRank;
-                const oldRank = oldRankMap.get(game.appId);
-                if (oldRank != null) {
-                  game.rankChange = oldRank - newRank;
-                } else if (previous) {
-                  game.rankChange = 10; // new entry since last snapshot
-                }
+          for (const game of games) {
+            const newRank = newRankMap.get(game.appId);
+            if (newRank != null && game.chartRank == null) {
+              // First chart that matches wins (priority: 글로벌탑 > 매출탑 > 캐주얼탑)
+              game.chartRank = newRank;
+              game.chartLabel = chart.label;
+              const oldRank = oldRankMap.get(game.appId);
+              if (oldRank != null) {
+                game.rankChange = oldRank - newRank;
+              } else if (previous) {
+                game.rankChange = 10;
               }
             }
           }

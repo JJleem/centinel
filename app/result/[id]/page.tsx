@@ -118,7 +118,7 @@ export default function SharedResultPage() {
                         <span className="text-xs" style={{ color: "#F5A623" }}>⭐ {game.score.toFixed(1)}</span>
                         {game.chartRank != null && (
                           <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full" style={{ background: "#EBF5FC", color: "#0B7FD4" }}>
-                            TOP {game.chartRank}
+                            {game.chartLabel ?? "글로벌탑"} {game.chartRank}위
                           </span>
                         )}
                         {(game.rankChange ?? 0) > 0 && (

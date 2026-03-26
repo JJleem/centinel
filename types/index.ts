@@ -8,6 +8,16 @@ export interface GameData {
   description: string;
   icon?: string;
   screenshots?: string[];
+  rankChange?: number;   // positive = rising, negative = falling, undefined = no data
+  chartRank?: number;   // current rank in chart (1-30), undefined = not in chart
+  chartLabel?: string;  // which chart: "글로벌탑" | "매출탑" | "캐주얼탑"
+}
+
+export interface RisingInsight {
+  appId: string;
+  title: string;
+  rankChange: number;
+  reason: string;
 }
 
 export interface VisionResult {
@@ -51,6 +61,7 @@ export interface AnalysisResult {
   trendAnalysis: TrendAnalysis;
   insight: InsightSummary;
   adCopies: AdCopy[];
+  risingInsights?: RisingInsight[];
   visionResult?: VisionResult | null;
   createdAt: string;
   usedFallback?: boolean;
