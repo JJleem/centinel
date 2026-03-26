@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 
+function GameIcon({ src, alt }: { src: string; alt: string }) {
+  const [broken, setBroken] = useState(false);
+  if (broken) return <span>🎮</span>;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt={alt} className="w-full h-full object-cover" onError={() => setBroken(true)} />;
+}
+
 type Tab = "rising" | "global" | "casual" | "surge";
 
 interface ChartGame {
@@ -162,21 +169,11 @@ export default function TrendCharts() {
               </span>
 
               {/* Icon */}
-              {game.icon ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={game.icon}
-                  alt={game.title}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-[8px] shrink-0 object-cover"
-                />
-              ) : (
-                <div
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-[8px] shrink-0 flex items-center justify-center text-sm"
-                  style={{ background: "#EBF5FC" }}
-                >
-                  🎮
-                </div>
-              )}
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center text-sm" style={{ background: "#EBF5FC" }}>
+                {game.icon ? (
+                  <GameIcon src={game.icon} alt={game.title} />
+                ) : "🎮"}
+              </div>
 
               {/* Info */}
               <div className="min-w-0 flex-1">

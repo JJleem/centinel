@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+
+function SafeImg({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const [broken, setBroken] = useState(false);
+  if (broken || !src) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt={alt} className={className} onError={() => setBroken(true)} />;
+}
 import { useCallback } from "react";
 import TrendCard from "@/components/TrendCard";
 import RisingInsightsSection from "@/components/RisingInsightsSection";
@@ -162,22 +169,12 @@ export default function ResultPage() {
                     key={i}
                     className="pdf-card flex items-center gap-3 bg-white border border-[#E8F4FC] rounded-[14px] p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-blue-100/50 hover:border-[#C8E4F4] shadow-sm"
                   >
-                    {game.icon ? (
-                      <img
-                        src={game.icon}
-                        alt={game.title}
-                        width={48}
-                        height={48}
-                        className="w-12 h-12 rounded-xl shrink-0 object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center text-[#0B7FD4] font-bold text-lg"
-                        style={{ background: "#EBF5FC" }}
-                      >
-                        {game.title.charAt(0)}
-                      </div>
-                    )}
+                    <div className="w-12 h-12 rounded-xl shrink-0 overflow-hidden flex items-center justify-center text-[#0B7FD4] font-bold text-lg" style={{ background: "#EBF5FC" }}>
+                      {game.icon
+                        ? <SafeImg src={game.icon} alt={game.title} className="w-full h-full object-cover" />
+                        : game.title.charAt(0)
+                      }
+                    </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[#0A1929] font-semibold text-sm truncate">{game.title}</p>
                       <p className="text-[#4A6080] text-xs truncate">{game.developer}</p>

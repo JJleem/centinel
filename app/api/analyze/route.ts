@@ -292,7 +292,7 @@ async function analyzeWhyChart(
     .map((g) => {
       const rankLabel = g.chartRank ? `TOP ${g.chartRank}위` : "인기 게임";
       const changeLabel = (g.rankChange ?? 0) > 0 ? ` (▲${g.rankChange} 급상승)` : (g.rankChange ?? 0) < 0 ? ` (▼${Math.abs(g.rankChange!)} 하락)` : "";
-      return `- ${g.title} [${rankLabel}${changeLabel}] | Genre: ${g.genre} | Developer: ${g.developer}\n  Description: ${g.description.slice(0, 200)}`;
+      return `- appId: ${g.appId} | ${g.title} [${rankLabel}${changeLabel}] | Genre: ${g.genre} | Developer: ${g.developer}\n  Description: ${g.description.slice(0, 200)}`;
     })
     .join("\n");
 

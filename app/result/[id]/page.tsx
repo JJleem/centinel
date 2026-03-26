@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+
+function SafeImg({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const [broken, setBroken] = useState(false);
+  if (broken || !src) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt={alt} className={className} onError={() => setBroken(true)} />;
+}
 import Link from "next/link";
 import TrendCard from "@/components/TrendCard";
 import AdCopyCard from "@/components/AdCopyCard";
@@ -106,12 +113,9 @@ export default function SharedResultPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {result.games.map((game, i) => (
                   <div key={i} className="flex items-center gap-3 bg-white border border-[#E8F4FC] rounded-[14px] p-3 shadow-sm">
-                    {game.icon ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={game.icon} alt={game.title} className="w-12 h-12 rounded-xl shrink-0 object-cover" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center text-xl" style={{ background: "#EBF5FC" }}>🎮</div>
-                    )}
+                    <div className="w-12 h-12 rounded-xl shrink-0 overflow-hidden flex items-center justify-center text-xl" style={{ background: "#EBF5FC" }}>
+                      {game.icon ? <SafeImg src={game.icon} alt={game.title} className="w-full h-full object-cover" /> : "🎮"}
+                    </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-[#0A1929] truncate">{game.title}</p>
                       <p className="text-xs text-[#4A6080] truncate">{game.developer}</p>

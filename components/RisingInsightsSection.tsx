@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { RisingInsight, GameData } from "@/types";
 
 interface Props {
@@ -16,6 +17,13 @@ const LABEL_COLORS: Record<string, { bg: string; color: string; border: string }
 
 function chartColors(label?: string) {
   return LABEL_COLORS[label ?? "글로벌탑"] ?? LABEL_COLORS["글로벌탑"];
+}
+
+function SafeImg({ src, alt, className, style }: { src: string; alt: string; className?: string; style?: React.CSSProperties }) {
+  const [broken, setBroken] = useState(false);
+  if (broken || !src) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt={alt} className={className} style={style} onError={() => setBroken(true)} />;
 }
 
 export default function RisingInsightsSection({ insights, games, lang }: Props) {
@@ -35,7 +43,6 @@ export default function RisingInsightsSection({ insights, games, lang }: Props) 
 
   const [hero, ...rest] = sorted;
   const heroGame = gameMap.get(hero.appId);
-
   const colors = chartColors(heroGame?.chartLabel);
 
   return (
@@ -59,11 +66,13 @@ export default function RisingInsightsSection({ insights, games, lang }: Props) 
         {/* Top accent bar */}
         <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #0B7FD4, #6B4EFF)" }} />
 
-        {/* Screenshot blurred background (if available) */}
+        {/* Screenshot blurred background */}
         {heroGame?.screenshots?.[0] && (
-          <div
-            className="absolute inset-0 opacity-[0.06] bg-cover bg-center"
-            style={{ backgroundImage: `url(${heroGame.screenshots[0]})`, filter: "blur(12px)", transform: "scale(1.1)" }}
+          <SafeImg
+            src={heroGame.screenshots[0]}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-[0.06]"
+            style={{ filter: "blur(12px)", transform: "scale(1.1)" }}
           />
         )}
 
@@ -72,12 +81,13 @@ export default function RisingInsightsSection({ insights, games, lang }: Props) 
             {/* Icon */}
             <div className="shrink-0">
               {heroGame?.icon ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={heroGame.icon}
-                  alt={hero.title}
-                  className="w-20 h-20 rounded-[18px] object-cover shadow-md"
-                />
+                <div className="w-20 h-20 rounded-[18px] shadow-md overflow-hidden" style={{ background: colors.bg }}>
+                  <SafeImg
+                    src={heroGame.icon}
+                    alt={hero.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               ) : (
                 <div
                   className="w-20 h-20 rounded-[18px] flex items-center justify-center text-3xl shadow-md"
@@ -114,25 +124,26 @@ export default function RisingInsightsSection({ insights, games, lang }: Props) 
 
               <h3 className="text-base font-bold text-[#0A1929] leading-tight mb-0.5">{hero.title}</h3>
               <p className="text-xs text-[#4A6080] mb-1">{heroGame?.developer}</p>
-
               <div className="flex items-center gap-2 text-xs text-[#4A6080]">
                 {heroGame?.score != null && heroGame.score > 0 && (
                   <span style={{ color: "#F5A623" }}>⭐ {heroGame.score.toFixed(1)}</span>
                 )}
-                {heroGame?.genre && <span className="px-1.5 py-0.5 rounded-full" style={{ background: "#F8FBFF", color: "#4A6080" }}>{heroGame.genre}</span>}
+                {heroGame?.genre && (
+                  <span className="px-1.5 py-0.5 rounded-full" style={{ background: "#F8FBFF" }}>{heroGame.genre}</span>
+                )}
               </div>
             </div>
 
             {/* Screenshot thumbnail */}
             {heroGame?.screenshots?.[0] && (
-              <div className="hidden sm:block shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={heroGame.screenshots[0]}
-                  alt="screenshot"
-                  className="h-20 w-auto rounded-[10px] object-cover shadow-sm border"
-                  style={{ borderColor: "#E8F4FC" }}
-                />
+              <div className="hidden sm:flex shrink-0 items-start">
+                <div className="h-20 w-auto rounded-[10px] overflow-hidden shadow-sm border" style={{ borderColor: "#E8F4FC" }}>
+                  <SafeImg
+                    src={heroGame.screenshots[0]}
+                    alt="screenshot"
+                    className="h-20 w-auto object-cover"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -160,12 +171,13 @@ export default function RisingInsightsSection({ insights, games, lang }: Props) 
                 style={{ borderColor: "#E8F4FC" }}
               >
                 <div className="flex items-start gap-3 mb-3">
-                  {game?.icon ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={game.icon} alt={ins.title} className="w-12 h-12 rounded-[12px] shrink-0 object-cover shadow-sm" />
-                  ) : (
-                    <div className="w-12 h-12 rounded-[12px] shrink-0 flex items-center justify-center text-xl" style={{ background: "#EBF5FC" }}>🎮</div>
-                  )}
+                  <div className="w-12 h-12 rounded-[12px] shrink-0 overflow-hidden shadow-sm" style={{ background: "#EBF5FC" }}>
+                    {game?.icon ? (
+                      <SafeImg src={game.icon} alt={ins.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xl">🎮</div>
+                    )}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
                       <span className="text-sm font-semibold text-[#0A1929]">{ins.title}</span>
