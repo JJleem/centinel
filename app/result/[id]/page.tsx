@@ -86,10 +86,6 @@ export default function SharedResultPage() {
               <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} resultId={id} visionResult={result.visionResult} />
             </div>
 
-            <div className="mb-8">
-              <GameCharts games={result.games} />
-            </div>
-
             <div className="mb-10">
               <div className="mb-4"><SectionTitle>광고 소재 6종</SectionTitle></div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -99,7 +95,7 @@ export default function SharedResultPage() {
               </div>
             </div>
 
-            <div className="mt-10">
+            <div className="mt-10 mb-8">
               <div className="mb-4"><SectionTitle>수집된 게임 데이터</SectionTitle></div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {result.games.map((game, i) => (
@@ -119,6 +115,8 @@ export default function SharedResultPage() {
                 ))}
               </div>
             </div>
+
+            <GameCharts games={result.games} />
           </>
         )}
       </main>
