@@ -6,6 +6,7 @@ import Link from "next/link";
 import TrendCard from "@/components/TrendCard";
 import AdCopyCard from "@/components/AdCopyCard";
 import GameCharts from "@/components/GameCharts";
+import RisingInsightsSection from "@/components/RisingInsightsSection";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { AnalysisResult } from "@/types";
 
@@ -86,6 +87,10 @@ export default function SharedResultPage() {
               <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} resultId={id} visionResult={result.visionResult} />
             </div>
 
+            {result.risingInsights && result.risingInsights.length > 0 && (
+              <RisingInsightsSection insights={result.risingInsights} games={result.games} lang={result.lang} />
+            )}
+
             <div className="mb-10">
               <div className="mb-4"><SectionTitle>광고 소재 6종</SectionTitle></div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -106,10 +111,27 @@ export default function SharedResultPage() {
                     ) : (
                       <div className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center text-xl" style={{ background: "#EBF5FC" }}>🎮</div>
                     )}
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-[#0A1929] truncate">{game.title}</p>
                       <p className="text-xs text-[#4A6080] truncate">{game.developer}</p>
-                      <p className="text-xs text-[#4A6080]">⭐ {game.score.toFixed(1)} · {game.installs}</p>
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        <span className="text-xs" style={{ color: "#F5A623" }}>⭐ {game.score.toFixed(1)}</span>
+                        {game.chartRank != null && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full" style={{ background: "#EBF5FC", color: "#0B7FD4" }}>
+                            TOP {game.chartRank}
+                          </span>
+                        )}
+                        {(game.rankChange ?? 0) > 0 && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full" style={{ background: "#F0FDF4", color: "#10B981" }}>
+                            ▲{game.rankChange}
+                          </span>
+                        )}
+                        {(game.rankChange ?? 0) < 0 && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full" style={{ background: "#FFF7F7", color: "#EF4444" }}>
+                            ▼{Math.abs(game.rankChange!)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
