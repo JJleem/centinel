@@ -120,19 +120,20 @@ export default function TrendCharts() {
               {fetchedAt} 기준
             </span>
           )}
+        </div>
+
+        {/* Tabs + snapshot button */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             onClick={saveSnapshot}
             disabled={saving}
-            className="text-[10px] px-2 py-0.5 rounded-[6px] border transition-colors disabled:opacity-50"
-            style={{ borderColor: "#C8E4F4", color: saving ? "#C8E4F4" : "#0B7FD4" }}
+            className="text-[10px] px-2 py-1 rounded-[8px] border transition-colors disabled:opacity-50 whitespace-nowrap"
+            style={{ borderColor: "#C8E4F4", color: saving ? "#C8E4F4" : "#4A6080" }}
           >
             {saving ? "저장중..." : saveMsg || "스냅샷 저장"}
           </button>
-        </div>
-
-        {/* Tabs */}
-        <div
-          className="flex items-center gap-0.5 rounded-[10px] p-0.5 border self-start sm:self-auto"
+          <div
+          className="flex items-center gap-0.5 rounded-[10px] p-0.5 border"
           style={{ background: "#F8FBFF", borderColor: "#E8F4FC" }}
         >
           {TABS.map((tab) => (
@@ -153,6 +154,7 @@ export default function TrendCharts() {
               {tab.label}
             </button>
           ))}
+          </div>
         </div>
       </div>
 
