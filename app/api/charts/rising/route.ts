@@ -12,7 +12,7 @@ export async function GET() {
     .limit(200);
 
   if (timesErr || !times || times.length === 0) {
-    return NextResponse.json({ error: "no_data", message: "아직 데이터가 없습니다. 잠시 후 다시 시도해주세요." }, { status: 404 });
+    return NextResponse.json({ error: "no_data" }, { status: 404 });
   }
 
   // Find two distinct snapshot buckets (at least 1 hour apart)
@@ -23,7 +23,7 @@ export async function GET() {
   );
 
   if (!previous) {
-    return NextResponse.json({ error: "insufficient_snapshots", message: "급상승 감지를 위해 데이터 수집 중입니다. 1시간 뒤 다시 확인해주세요." }, { status: 202 });
+    return NextResponse.json({ error: "insufficient_snapshots", latestSnapshotAt: latest }, { status: 202 });
   }
 
   // Fetch both snapshots
@@ -67,5 +67,11 @@ export async function GET() {
       rankChange: g.rankChange,
     }));
 
-  return NextResponse.json({ games: rising, snapshotAge: Math.round((latestDate.getTime() - new Date(previous.fetched_at).getTime()) / 60000) });
+  return NextResponse.json({
+    games: rising,
+    snapshotAge: Math.round((latestDate.getTime() - new Date(previous.fetched_at).getTime()) / 60000),
+    latestSnapshotAt: latest,
+    previousSnapshotAt: previous.fetched_at,
+    noChanges: rising.length === 0,
+  });
 }

@@ -17,7 +17,19 @@ export default function HistoryPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const router = useRouter();
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("이 분석 기록을 삭제할까요?")) return;
+    setDeletingId(id);
+    try {
+      await fetch(`/api/history/${id}`, { method: "DELETE" });
+      setHistory((prev) => prev.filter((item) => item.id !== id));
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
     fetch("/api/history")
@@ -136,6 +148,14 @@ export default function HistoryPage() {
                       className="text-sm px-4 py-2 border border-[#E8F4FC] group-hover:border-[#C8E4F4] text-[#4A6080] group-hover:text-[#0B7FD4] rounded-[10px] transition-colors whitespace-nowrap bg-white"
                     >
                       결과 보기
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      disabled={deletingId === item.id}
+                      className="text-xs px-3 py-2 border rounded-[10px] transition-all duration-200 disabled:opacity-40"
+                      style={{ borderColor: "#FFE4E4", color: "#EF4444" }}
+                    >
+                      {deletingId === item.id ? "삭제중..." : "🗑"}
                     </button>
                   </div>
                 </div>

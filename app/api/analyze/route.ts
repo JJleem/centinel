@@ -138,7 +138,7 @@ async function synthesizeInsight(
   lang: string
 ): Promise<InsightSummary> {
   const message = await client.messages.create({
-    model: HAIKU,
+    model: SONNET,
     max_tokens: 2000,
     system: "Senior mobile gaming strategist. Synthesize the strongest insights from two analyses. Each summary item must be under 100 characters. Output raw JSON only — no markdown, no explanation.",
     messages: [{

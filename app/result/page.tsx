@@ -137,7 +137,7 @@ export default function ResultPage() {
 
             {/* Why Popular — above trend insight */}
             {result.risingInsights && result.risingInsights.length > 0 && (
-              <RisingInsightsSection insights={result.risingInsights} games={result.games} lang={result.lang} />
+              <RisingInsightsSection insights={result.risingInsights} games={result.games} lang={result.lang} createdAt={result.createdAt} />
             )}
 
             {/* Similar games (only when a chart game was analyzed) */}

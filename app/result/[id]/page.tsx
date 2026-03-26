@@ -94,7 +94,7 @@ export default function SharedResultPage() {
 
             {/* Why Popular — above trend insight */}
             {result.risingInsights && result.risingInsights.length > 0 && (
-              <RisingInsightsSection insights={result.risingInsights} games={result.games} lang={result.lang} />
+              <RisingInsightsSection insights={result.risingInsights} games={result.games} lang={result.lang} createdAt={result.createdAt} />
             )}
 
             {/* Similar games */}

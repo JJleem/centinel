@@ -7,6 +7,7 @@ interface Props {
   insights: RisingInsight[];
   games: GameData[];
   lang?: string;
+  createdAt?: string;
 }
 
 const LABEL_COLORS: Record<string, { bg: string; color: string; border: string }> = {
@@ -26,7 +27,7 @@ function SafeImg({ src, alt, className, style }: { src: string; alt: string; cla
   return <img src={src} alt={alt} className={className} style={style} onError={() => setBroken(true)} />;
 }
 
-export default function RisingInsightsSection({ insights, games, lang }: Props) {
+export default function RisingInsightsSection({ insights, games, lang, createdAt }: Props) {
   if (!insights || insights.length === 0) return null;
 
   const gameMap = new Map(games.map((g) => [g.appId, g]));
@@ -62,6 +63,16 @@ export default function RisingInsightsSection({ insights, games, lang }: Props) 
               ? "Individual breakdown of top chart games — gameplay hook, retention driver, and why it resonates now"
               : "탑 차트 게임 개별 분석 · 게임플레이 훅, 리텐션 동인, 지금 이 시점에 뜨는 이유를 설명합니다"}
           </p>
+          {createdAt && (
+            <p className="text-[11px] mt-1" style={{ color: "#C8E4F4" }}>
+              {lang === "EN" ? "Chart data as of" : "차트 기준"}{" "}
+              {new Date(createdAt).toLocaleString("ko-KR", {
+                timeZone: "Asia/Seoul",
+                year: "numeric", month: "long", day: "numeric",
+                hour: "numeric", minute: "2-digit", hour12: true,
+              })} KST
+            </p>
+          )}
         </div>
       </div>
 
