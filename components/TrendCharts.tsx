@@ -140,7 +140,7 @@ export default function TrendCharts() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className="px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-[8px] transition-all duration-200"
+              className="px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-[8px] transition-all duration-200 whitespace-nowrap"
               style={
                 activeTab === tab.key
                   ? {
