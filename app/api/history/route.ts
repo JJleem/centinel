@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
       trend_analysis: result.trendAnalysis,
       insight: result.insight,
       ad_copies: result.adCopies,
+      rising_insights: result.risingInsights ?? null,
+      breakout_candidates: result.breakoutCandidates ?? null,
       lang: result.lang ?? "EN",
     })
     .select("id")

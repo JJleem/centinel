@@ -7,7 +7,9 @@ import {
   AdCopy,
   AnalysisResult,
   RisingInsight,
+  BreakoutCandidate,
 } from "@/types";
+import { supabase } from "@/lib/supabase";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SONNET = "claude-sonnet-4-20250514";
@@ -320,6 +322,79 @@ async function analyzeWhyChart(
   });
 }
 
+async function findBreakoutCandidates(analyzedAppIds: string[]): Promise<BreakoutCandidate[]> {
+  const CHARTS = [
+    { collection: "TOP_FREE", category: "GAME",        label: "글로벌탑" },
+    { collection: "GROSSING", category: "GAME",        label: "매출탑" },
+    { collection: "TOP_FREE", category: "GAME_CASUAL", label: "캐주얼탑" },
+  ];
+
+  const candidates: BreakoutCandidate[] = [];
+  const seenIds = new Set(analyzedAppIds);
+
+  for (const chart of CHARTS) {
+    const { data: times } = await supabase
+      .from("chart_snapshots")
+      .select("fetched_at")
+      .eq("collection", chart.collection)
+      .eq("category", chart.category)
+      .order("fetched_at", { ascending: false })
+      .limit(100);
+
+    if (!times || times.length === 0) continue;
+
+    const latest = times[0].fetched_at;
+    const latestDate = new Date(latest);
+    const previous = times.find(
+      (t) => new Date(t.fetched_at).getTime() < latestDate.getTime() - 60 * 60 * 1000
+    );
+    if (!previous) continue;
+
+    const [{ data: newSnap }, { data: oldSnap }] = await Promise.all([
+      supabase
+        .from("chart_snapshots")
+        .select("app_id, title, developer, icon, score, genre, rank")
+        .eq("collection", chart.collection)
+        .eq("category", chart.category)
+        .eq("fetched_at", latest),
+      supabase
+        .from("chart_snapshots")
+        .select("app_id, rank")
+        .eq("collection", chart.collection)
+        .eq("category", chart.category)
+        .eq("fetched_at", previous.fetched_at),
+    ]);
+
+    if (!newSnap || !oldSnap) continue;
+
+    const oldRankMap = new Map(oldSnap.map((r) => [r.app_id, r.rank]));
+
+    for (const g of newSnap) {
+      if (seenIds.has(g.app_id)) continue;
+      const oldRank = oldRankMap.get(g.app_id);
+      if (oldRank == null) continue;
+      const rankChange = oldRank - g.rank;
+      if (rankChange <= 0) continue;
+      seenIds.add(g.app_id);
+      candidates.push({
+        appId: g.app_id,
+        title: g.title ?? "Unknown",
+        developer: g.developer ?? "",
+        icon: g.icon ?? "",
+        score: g.score ?? 0,
+        genre: g.genre ?? "",
+        chartRank: g.rank,
+        chartLabel: chart.label,
+        rankChange,
+      });
+    }
+  }
+
+  return candidates
+    .sort((a, b) => b.rankChange - a.rankChange)
+    .slice(0, 10);
+}
+
 export async function POST(req: NextRequest) {
   const { query, games, lang = "EN" } = await req.json();
 
@@ -374,6 +449,12 @@ export async function POST(req: NextRequest) {
         // ── Orchestrator: Select best ad copies (Sonnet) ───────────────
         const adCopies = await synthesizeAdCopies(copiesA, copiesB, query, lang);
 
+        let breakoutCandidates: BreakoutCandidate[] = [];
+        try {
+          const analyzedIds = (games as GameData[]).map((g) => g.appId);
+          breakoutCandidates = await findBreakoutCandidates(analyzedIds);
+        } catch { /* non-critical */ }
+
         const result: AnalysisResult = {
           query,
           games: games as GameData[],
@@ -381,6 +462,7 @@ export async function POST(req: NextRequest) {
           insight,
           adCopies,
           risingInsights: risingInsights.length > 0 ? risingInsights : undefined,
+          breakoutCandidates: breakoutCandidates.length > 0 ? breakoutCandidates : undefined,
           createdAt: new Date().toISOString(),
         };
         send({ event: "final_selection_done", message: "최종 선별 완료", result });
