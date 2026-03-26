@@ -424,11 +424,9 @@ export async function POST(req: NextRequest) {
 
         // ── Stage 1: Trend Analysis + Why Chart (parallel) ────────────
         const chartGames = (games as GameData[]).filter((g) => g.chartRank != null);
-        // Fall back to top 6 scraped games if none have chartRank (direct search)
-        const gamesToAnalyze = chartGames.length > 0 ? chartGames : (games as GameData[]).slice(0, 6);
         const [trendAnalysis, risingInsights] = await Promise.all([
           analyzeTrends(games as GameData[], lang),
-          analyzeWhyChart(gamesToAnalyze, lang),
+          chartGames.length > 0 ? analyzeWhyChart(chartGames, lang) : Promise.resolve([]),
         ]);
         send({ event: "analysis_done", message: "트렌드 분석 완료 (Sonnet)" });
 

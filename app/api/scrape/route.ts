@@ -157,7 +157,8 @@ export async function POST(req: NextRequest) {
             }
           }
         }
-      } catch { /* non-critical */ }
+        console.log("[scrape] chart enrichment done. chartRanks:", games.map(g => `${g.appId}:${g.chartRank ?? "none"}`).join(", "));
+      } catch (e) { console.error("[scrape] chart enrichment failed:", e); }
 
       // Fetch similar games for the highest-ranked chart game (any search, not just chart click)
       let similarGames: SimilarGame[] = [];
