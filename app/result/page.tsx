@@ -126,14 +126,15 @@ export default function ResultPage() {
               ))}
             </div>
 
+            {/* Why Popular — above trend insight */}
+            {result.risingInsights && result.risingInsights.length > 0 && (
+              <RisingInsightsSection insights={result.risingInsights} games={result.games} lang={result.lang} />
+            )}
+
             {/* Trend insight */}
             <div className="mb-8">
               <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} resultId={typeof window !== "undefined" ? localStorage.getItem("centinel_current_id") : null} />
             </div>
-
-            {result.risingInsights && result.risingInsights.length > 0 && (
-              <RisingInsightsSection insights={result.risingInsights} games={result.games} lang={result.lang} />
-            )}
 
             {/* Ad copies */}
             <div className="pdf-section mb-10">

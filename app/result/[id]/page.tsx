@@ -83,13 +83,14 @@ export default function SharedResultPage() {
               </p>
             </div>
 
-            <div className="mb-8">
-              <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} resultId={id} visionResult={result.visionResult} />
-            </div>
-
+            {/* Why Popular — above trend insight */}
             {result.risingInsights && result.risingInsights.length > 0 && (
               <RisingInsightsSection insights={result.risingInsights} games={result.games} lang={result.lang} />
             )}
+
+            <div className="mb-8">
+              <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} resultId={id} visionResult={result.visionResult} />
+            </div>
 
             <div className="mb-10">
               <div className="mb-4"><SectionTitle>광고 소재 6종</SectionTitle></div>

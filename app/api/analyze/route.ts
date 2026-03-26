@@ -293,11 +293,11 @@ async function analyzeWhyChart(
 
   const message = await client.messages.create({
     model: HAIKU,
-    max_tokens: 1200,
-    system: "Mobile game market analyst. Explain WHY each game is popular/trending in Google Play charts. For rising games, explain the momentum. For stable top games, explain their sustained appeal. Be specific and concise. Output raw JSON only.",
+    max_tokens: 2500,
+    system: "Mobile game market analyst. Explain WHY each game is popular/trending in Google Play charts. Be specific and analytical — cover gameplay hook, core loop, social/viral mechanics, monetization fit, and target audience. Output raw JSON only.",
     messages: [{
       role: "user",
-      content: `These games are currently in Google Play TOP_FREE charts:\n\n${gameList}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nFor each game, write 1-2 sentences explaining why it's popular or trending. Focus on: gameplay hook, genre fit, audience appeal, or recent momentum.\n\nRespond with JSON:\n{\n  "insights": [\n    { "appId": "com.example", "reason": "..." }\n  ]\n}`,
+      content: `These games are currently in Google Play charts:\n\n${gameList}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nFor each game, write 3-4 sentences covering: (1) core gameplay hook that drives retention, (2) social or viral mechanics, (3) monetization model fit, (4) why it resonates with today's mobile audience.\n\nRespond with JSON:\n{\n  "insights": [\n    { "appId": "com.example", "reason": "..." }\n  ]\n}`,
     }],
   });
 
