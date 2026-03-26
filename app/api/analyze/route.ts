@@ -6,6 +6,7 @@ import {
   InsightSummary,
   AdCopy,
   AnalysisResult,
+  RisingInsight,
 } from "@/types";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -82,8 +83,8 @@ async function summarizeInsightsAnalytical(
 ): Promise<InsightSummary> {
   const message = await client.messages.create({
     model: HAIKU,
-    max_tokens: 1500,
-    system: "Mobile gaming insight expert for UA marketers. Focus on data-driven patterns, measurable market signals, and ROI-oriented opportunities. Be concise. Output raw JSON only — no markdown, no code blocks, no explanation.",
+    max_tokens: 2000,
+    system: "Mobile gaming insight expert for UA marketers. Focus on data-driven patterns, measurable market signals, and ROI-oriented opportunities. Be concise. Keep each summary item under 120 characters. Output raw JSON only — no markdown, no code blocks, no explanation.",
     messages: [{
       role: "user",
       content: `Based on this trend analysis, create an analytical insight summary:\n\nMechanics: ${trendAnalysis.mechanics.join(", ")}\nRevenue Models: ${trendAnalysis.revenueModels.join(", ")}\nKeywords: ${trendAnalysis.keywords.join(", ")}\nAnalysis: ${trendAnalysis.rawAnalysis}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
@@ -108,8 +109,8 @@ async function summarizeInsightsCreative(
 ): Promise<InsightSummary> {
   const message = await client.messages.create({
     model: HAIKU,
-    max_tokens: 1500,
-    system: "Mobile gaming insight expert for UA marketers. Focus on creative opportunities, emerging behavioral trends, and untapped audience segments. Be concise. Output raw JSON only — no markdown, no code blocks, no explanation.",
+    max_tokens: 2000,
+    system: "Mobile gaming insight expert for UA marketers. Focus on creative opportunities, emerging behavioral trends, and untapped audience segments. Be concise. Keep each summary item under 120 characters. Output raw JSON only — no markdown, no code blocks, no explanation.",
     messages: [{
       role: "user",
       content: `Based on this trend analysis, create a creative insight summary:\n\nMechanics: ${trendAnalysis.mechanics.join(", ")}\nRevenue Models: ${trendAnalysis.revenueModels.join(", ")}\nKeywords: ${trendAnalysis.keywords.join(", ")}\nAnalysis: ${trendAnalysis.rawAnalysis}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
@@ -135,8 +136,8 @@ async function synthesizeInsight(
 ): Promise<InsightSummary> {
   const message = await client.messages.create({
     model: SONNET,
-    max_tokens: 2000,
-    system: "Senior mobile gaming strategist. You receive two parallel insight analyses from sub-agents and synthesize the strongest combined version — keeping the sharpest insights from each. Output raw JSON only — no markdown, no code blocks, no explanation.",
+    max_tokens: 4000,
+    system: "Senior mobile gaming strategist. You receive two parallel insight analyses from sub-agents and synthesize the strongest combined version — keeping the sharpest insights from each. Keep each summary item under 120 characters. Output raw JSON only — no markdown, no code blocks, no explanation.",
     messages: [{
       role: "user",
       content: `Synthesize these two parallel insight analyses into one optimal version:\n\nAnalysis A (data-driven):\n${JSON.stringify(insightA)}\n\nAnalysis B (creative):\n${JSON.stringify(insightB)}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
@@ -277,6 +278,43 @@ async function synthesizeAdCopies(
   return parsed.adCopies;
 }
 
+// ── Agent 0: Why Chart (Haiku, for any game appearing in top chart) ────────
+async function analyzeWhyChart(
+  chartGames: GameData[],
+  lang: string
+): Promise<RisingInsight[]> {
+  const gameList = chartGames
+    .map((g) => {
+      const rankLabel = g.chartRank ? `TOP ${g.chartRank}위` : "인기 게임";
+      const changeLabel = (g.rankChange ?? 0) > 0 ? ` (▲${g.rankChange} 급상승)` : (g.rankChange ?? 0) < 0 ? ` (▼${Math.abs(g.rankChange!)} 하락)` : "";
+      return `- ${g.title} [${rankLabel}${changeLabel}] | Genre: ${g.genre} | Developer: ${g.developer}\n  Description: ${g.description.slice(0, 200)}`;
+    })
+    .join("\n");
+
+  const message = await client.messages.create({
+    model: HAIKU,
+    max_tokens: 1200,
+    system: "Mobile game market analyst. Explain WHY each game is popular/trending in Google Play charts. For rising games, explain the momentum. For stable top games, explain their sustained appeal. Be specific and concise. Output raw JSON only.",
+    messages: [{
+      role: "user",
+      content: `These games are currently in Google Play TOP_FREE charts:\n\n${gameList}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nFor each game, write 1-2 sentences explaining why it's popular or trending. Focus on: gameplay hook, genre fit, audience appeal, or recent momentum.\n\nRespond with JSON:\n{\n  "insights": [\n    { "appId": "com.example", "reason": "..." }\n  ]\n}`,
+    }],
+  });
+
+  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  const parsed = parseJSON<{ insights: { appId: string; reason: string }[] }>(text, "Agent 0: Why Chart");
+
+  return parsed.insights.map((ins) => {
+    const game = chartGames.find((g) => g.appId === ins.appId);
+    return {
+      appId: ins.appId,
+      title: game?.title ?? ins.appId,
+      rankChange: game?.rankChange ?? 0,
+      reason: ins.reason,
+    };
+  });
+}
+
 export async function POST(req: NextRequest) {
   const { query, games, lang = "EN" } = await req.json();
 
@@ -303,8 +341,12 @@ export async function POST(req: NextRequest) {
         // ── Orchestrator Start ──────────────────────────────────────────
         send({ event: "orchestrator_start", message: "오케스트레이터 시작" });
 
-        // ── Stage 1: Trend Analysis Agent (Sonnet) ─────────────────────
-        const trendAnalysis = await analyzeTrends(games as GameData[], lang);
+        // ── Stage 1: Trend Analysis + Why Chart (parallel) ────────────
+        const chartGames = (games as GameData[]).filter((g) => g.chartRank != null);
+        const [trendAnalysis, risingInsights] = await Promise.all([
+          analyzeTrends(games as GameData[], lang),
+          chartGames.length > 0 ? analyzeWhyChart(chartGames, lang) : Promise.resolve([]),
+        ]);
         send({ event: "analysis_done", message: "트렌드 분석 완료 (Sonnet)" });
 
         // ── Stage 2: Insight Ensemble (2x Haiku, parallel) ────────────
@@ -333,6 +375,7 @@ export async function POST(req: NextRequest) {
           trendAnalysis,
           insight,
           adCopies,
+          risingInsights: risingInsights.length > 0 ? risingInsights : undefined,
           createdAt: new Date().toISOString(),
         };
         send({ event: "final_selection_done", message: "최종 선별 완료", result });
