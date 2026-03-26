@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
 
     // Save snapshot to DB (fire-and-forget, non-critical)
     try {
+      const now = new Date().toISOString();
       const snapshotRows = games.map((g, i) => ({
         app_id: g.appId,
         title: g.title,
@@ -64,7 +65,7 @@ export async function GET(req: NextRequest) {
         score: g.score,
         icon: g.icon,
         genre: g.genre,
-        fetched_at: new Date().toISOString(),
+        fetched_at: now,
       }));
       supabase.from("chart_snapshots").insert(snapshotRows).then(({ error: dbErr }) => {
         if (dbErr) console.error("[charts] snapshot save failed:", dbErr.message);
