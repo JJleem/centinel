@@ -64,7 +64,7 @@ export default function TrendCharts() {
 
   const handleSelect = (game: ChartGame) => {
     window.dispatchEvent(
-      new CustomEvent("centinel:autorun", { detail: { query: game.title } })
+      new CustomEvent("centinel:autorun", { detail: { query: game.title, appId: game.appId } })
     );
     window.scrollTo({ top: 0, behavior: "smooth" });
   };

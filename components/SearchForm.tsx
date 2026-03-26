@@ -82,9 +82,9 @@ export default function SearchForm() {
   // TrendCharts에서 게임 선택 시 자동 실행
   useEffect(() => {
     const handler = (e: Event) => {
-      const { query: q } = (e as CustomEvent<{ query: string }>).detail;
+      const { query: q, appId } = (e as CustomEvent<{ query: string; appId?: string }>).detail;
       setQuery(q);
-      setTimeout(() => handleSubmit(q), 0);
+      setTimeout(() => handleSubmit(q, appId), 0);
     };
     window.addEventListener("centinel:autorun", handler);
     return () => window.removeEventListener("centinel:autorun", handler);
@@ -95,7 +95,7 @@ export default function SearchForm() {
     setStepStatuses(prev => prev.map((s, i) => i === index ? status : s));
   };
 
-  const handleSubmit = async (searchQuery: string) => {
+  const handleSubmit = async (searchQuery: string, appId?: string) => {
     if (!searchQuery.trim()) return;
     setLoading(true);
     setError("");
@@ -106,7 +106,7 @@ export default function SearchForm() {
       const scrapeRes = await fetch("/api/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: searchQuery }),
+        body: JSON.stringify({ query: searchQuery, appId }),
       });
       const scrapeData = await scrapeRes.json();
       if (!scrapeRes.ok) {
