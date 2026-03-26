@@ -135,9 +135,9 @@ async function synthesizeInsight(
   lang: string
 ): Promise<InsightSummary> {
   const message = await client.messages.create({
-    model: SONNET,
-    max_tokens: 4000,
-    system: "Senior mobile gaming strategist. You receive two parallel insight analyses from sub-agents and synthesize the strongest combined version — keeping the sharpest insights from each. Keep each summary item under 120 characters. Output raw JSON only — no markdown, no code blocks, no explanation.",
+    model: HAIKU,
+    max_tokens: 2000,
+    system: "Senior mobile gaming strategist. Synthesize the strongest insights from two analyses. Each summary item must be under 100 characters. Output raw JSON only — no markdown, no explanation.",
     messages: [{
       role: "user",
       content: `Synthesize these two parallel insight analyses into one optimal version:\n\nAnalysis A (data-driven):\n${JSON.stringify(insightA)}\n\nAnalysis B (creative):\n${JSON.stringify(insightB)}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
@@ -251,8 +251,8 @@ async function synthesizeAdCopies(
   const allCopies = [...copiesA, ...copiesB];
   const message = await client.messages.create({
     model: SONNET,
-    max_tokens: 6000,
-    system: "Senior mobile game UA strategist. You receive 12 ad copies (6 performance-focused + 6 brand-focused) from sub-agents and select the best 6 — one per tone category. You may refine wording but keep each copy's core concept. Output raw JSON only — no markdown, no code blocks, no explanation.",
+    max_tokens: 4000,
+    system: "Senior mobile game UA strategist. Select the best 6 ad copies from 12 — one per tone. Minimal refinement only. Output raw JSON only — no markdown, no explanation.",
     messages: [{
       role: "user",
       content: `From these 12 ad copies for "${query}", select and refine the best 6 (one per tone: Excitement, Challenge, Curiosity, FOMO, Simplicity, Empathy/Storytelling):\n\n${JSON.stringify(allCopies, null, 2)}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
@@ -283,7 +283,12 @@ async function analyzeWhyChart(
   chartGames: GameData[],
   lang: string
 ): Promise<RisingInsight[]> {
-  const gameList = chartGames
+  // Limit to top 6 by chartRank to control cost
+  const topGames = [...chartGames]
+    .sort((a, b) => (a.chartRank ?? 99) - (b.chartRank ?? 99))
+    .slice(0, 6);
+
+  const gameList = topGames
     .map((g) => {
       const rankLabel = g.chartRank ? `TOP ${g.chartRank}위` : "인기 게임";
       const changeLabel = (g.rankChange ?? 0) > 0 ? ` (▲${g.rankChange} 급상승)` : (g.rankChange ?? 0) < 0 ? ` (▼${Math.abs(g.rankChange!)} 하락)` : "";
@@ -293,11 +298,11 @@ async function analyzeWhyChart(
 
   const message = await client.messages.create({
     model: HAIKU,
-    max_tokens: 2500,
-    system: "Mobile game market analyst. Explain WHY each game is popular/trending in Google Play charts. Be specific and analytical — cover gameplay hook, core loop, social/viral mechanics, monetization fit, and target audience. Output raw JSON only.",
+    max_tokens: 1800,
+    system: "Mobile game market analyst. Explain WHY each game is popular in Google Play charts. Be specific — cover gameplay hook, social mechanics, monetization fit. Output raw JSON only.",
     messages: [{
       role: "user",
-      content: `These games are currently in Google Play charts:\n\n${gameList}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nFor each game, write 3-4 sentences covering: (1) core gameplay hook that drives retention, (2) social or viral mechanics, (3) monetization model fit, (4) why it resonates with today's mobile audience.\n\nRespond with JSON:\n{\n  "insights": [\n    { "appId": "com.example", "reason": "..." }\n  ]\n}`,
+      content: `These games are currently in Google Play charts:\n\n${gameList}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nFor each game, write 2-3 sentences covering: core gameplay hook, social/viral mechanic, and why it resonates with today's mobile audience.\n\nRespond with JSON:\n{\n  "insights": [\n    { "appId": "com.example", "reason": "..." }\n  ]\n}`,
     }],
   });
 
@@ -305,7 +310,7 @@ async function analyzeWhyChart(
   const parsed = parseJSON<{ insights: { appId: string; reason: string }[] }>(text, "Agent 0: Why Chart");
 
   return parsed.insights.map((ins) => {
-    const game = chartGames.find((g) => g.appId === ins.appId);
+    const game = topGames.find((g) => g.appId === ins.appId);
     return {
       appId: ins.appId,
       title: game?.title ?? ins.appId,
