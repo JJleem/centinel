@@ -141,16 +141,18 @@ export default function RisingInsightsSection({ insights, games, lang }: Props) 
               </div>
             </div>
 
-            {/* Screenshot thumbnail */}
-            {heroGame?.screenshots?.[0] && (
-              <div className="hidden sm:flex shrink-0 items-start">
-                <div className="h-20 w-auto rounded-[10px] overflow-hidden shadow-sm border" style={{ borderColor: "#E8F4FC" }}>
-                  <SafeImg
-                    src={heroGame.screenshots[0]}
-                    alt="screenshot"
-                    className="h-20 w-auto object-cover"
-                  />
-                </div>
+            {/* Screenshot thumbnails (up to 3) */}
+            {heroGame?.screenshots && heroGame.screenshots.length > 0 && (
+              <div className="hidden sm:flex shrink-0 items-start gap-1.5">
+                {heroGame.screenshots.slice(0, 3).map((src, i) => (
+                  <div key={i} className="h-20 w-auto rounded-[10px] overflow-hidden shadow-sm border" style={{ borderColor: "#E8F4FC" }}>
+                    <SafeImg
+                      src={src}
+                      alt={`screenshot ${i + 1}`}
+                      className="h-20 w-auto object-cover"
+                    />
+                  </div>
+                ))}
               </div>
             )}
           </div>
