@@ -10,6 +10,8 @@ interface Props {
   usedFallback?: boolean;
   games?: GameData[];
   lang?: string;
+  resultId?: string | null;
+  visionResult?: import("@/types").VisionResult | null;
 }
 
 function GameIconStrip({ games }: { games: GameData[] }) {
@@ -62,7 +64,7 @@ function GameIcon({ game, index }: { game: GameData; index: number }) {
   );
 }
 
-export default function TrendCard({ insight, query, usedFallback, games, lang }: Props) {
+export default function TrendCard({ insight, query, usedFallback, games, lang, resultId, visionResult }: Props) {
   return (
     <div className="pdf-card bg-white border border-[#E8F4FC] rounded-[14px] p-6 shadow-sm overflow-hidden relative">
       {/* Left gradient accent bar */}
@@ -161,7 +163,7 @@ export default function TrendCard({ insight, query, usedFallback, games, lang }:
       </div>
 
       {/* Vision Analysis */}
-      {games && games.length > 0 && <VisionAnalysis games={games} lang={lang ?? "KO"} storageKey={query} />}
+      {games && games.length > 0 && <VisionAnalysis games={games} lang={lang ?? "KO"} resultId={resultId} initialVisionResult={visionResult} />}
     </div>
   );
 }

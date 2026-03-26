@@ -127,7 +127,7 @@ export default function ResultPage() {
 
             {/* Trend insight */}
             <div className="mb-8">
-              <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} />
+              <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} resultId={typeof window !== "undefined" ? localStorage.getItem("centinel_current_id") : null} />
             </div>
 
             {/* Ad copies */}

@@ -51,6 +51,7 @@ export interface AnalysisResult {
   trendAnalysis: TrendAnalysis;
   insight: InsightSummary;
   adCopies: AdCopy[];
+  visionResult?: VisionResult | null;
   createdAt: string;
   usedFallback?: boolean;
   lang?: string;

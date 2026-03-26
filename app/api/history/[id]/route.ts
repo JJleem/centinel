@@ -20,9 +20,26 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     trendAnalysis: data.trend_analysis,
     insight: data.insight,
     adCopies: data.ad_copies,
+    visionResult: data.vision_result ?? null,
     lang: data.lang,
     createdAt: data.created_at,
   };
 
   return NextResponse.json({ result });
+}
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const { visionResult } = await req.json();
+
+  const { error } = await supabase
+    .from("analysis_history")
+    .update({ vision_result: visionResult })
+    .eq("id", id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
 }

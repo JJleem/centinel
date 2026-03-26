@@ -8,7 +8,9 @@ type Lang = "KO" | "EN";
 interface Props {
   games: GameData[];
   lang?: string;
-  storageKey?: string; // e.g. query string for persistence
+  storageKey?: string;
+  resultId?: string | null; // Supabase analysis_history UUID
+  initialVisionResult?: VisionResult | null; // pre-loaded from DB (shared link)
 }
 
 interface Screenshot {
@@ -190,28 +192,23 @@ const LABELS: Record<Lang, {
   },
 };
 
-export default function VisionAnalysis({ games, lang: langProp = "KO", storageKey }: Props) {
+export default function VisionAnalysis({ games, lang: langProp = "KO", resultId, initialVisionResult }: Props) {
   const lang = (langProp === "EN" ? "EN" : "KO") as Lang;
   const L = LABELS[lang];
 
-  const lsKey = storageKey ? `centinel_vision_${storageKey}` : null;
-
-  const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [state, setState] = useState<"idle" | "loading" | "done" | "error">(
+    initialVisionResult ? "done" : "idle"
+  );
   const [progress, setProgress] = useState({ count: 0, total: 0, message: "" });
-  const [result, setResult] = useState<VisionResult | null>(null);
+  const [result, setResult] = useState<VisionResult | null>(initialVisionResult ?? null);
   const [error, setError] = useState("");
 
-  // Load persisted result on mount
   useEffect(() => {
-    if (!lsKey) return;
-    try {
-      const saved = localStorage.getItem(lsKey);
-      if (saved) {
-        setResult(JSON.parse(saved));
-        setState("done");
-      }
-    } catch { /* ignore */ }
-  }, [lsKey]);
+    if (initialVisionResult) {
+      setResult(initialVisionResult);
+      setState("done");
+    }
+  }, [initialVisionResult]);
 
   const screenshots: Screenshot[] = games.flatMap((g) =>
     (g.screenshots ?? []).map((url) => ({ url, gameTitle: g.title }))
@@ -266,9 +263,13 @@ export default function VisionAnalysis({ games, lang: langProp = "KO", storageKe
             const r = data.result as VisionResult;
             setResult(r);
             setState("done");
-            // Persist to localStorage
-            if (lsKey) {
-              try { localStorage.setItem(lsKey, JSON.stringify(r)); } catch { /* ignore */ }
+            // Save to DB
+            if (resultId) {
+              fetch(`/api/history/${resultId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ visionResult: r }),
+              }).catch(() => {});
             }
           }
         }
@@ -286,7 +287,6 @@ export default function VisionAnalysis({ games, lang: langProp = "KO", storageKe
   };
 
   const handleReanalyze = () => {
-    if (lsKey) { try { localStorage.removeItem(lsKey); } catch { /* ignore */ } }
     setState("idle"); setResult(null); setError("");
   };
 
