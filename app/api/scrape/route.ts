@@ -159,11 +159,14 @@ export async function POST(req: NextRequest) {
         }
       } catch { /* non-critical */ }
 
-      // Fetch similar games when appId provided (chart click), non-critical
+      // Fetch similar games for the highest-ranked chart game (any search, not just chart click)
       let similarGames: SimilarGame[] = [];
-      if (appId) {
-        try {
-          const similarList = await gplay.similar({ appId, lang: "en", country: "us" });
+      try {
+        // Use appId from chart click, or fall back to the top-ranked chart game in results
+        const chartGames = games.filter((g) => g.chartRank != null).sort((a, b) => (a.chartRank ?? 99) - (b.chartRank ?? 99));
+        const targetId = appId ?? chartGames[0]?.appId;
+        if (targetId) {
+          const similarList = await gplay.similar({ appId: targetId, lang: "en", country: "us" });
           const analyzedIds = new Set(games.map((g) => g.appId));
           similarGames = (similarList as { appId?: string; title?: string; developer?: string; icon?: string; score?: number }[])
             .filter((a) => a.appId && !analyzedIds.has(a.appId))
@@ -175,8 +178,8 @@ export async function POST(req: NextRequest) {
               icon: a.icon ?? "",
               score: a.score ?? 0,
             }));
-        } catch { /* non-critical */ }
-      }
+        }
+      } catch { /* non-critical */ }
 
       const response: ScrapeResponse = { games, source: "scrape", usedFallback: false, similarGames: similarGames.length > 0 ? similarGames : undefined };
       return NextResponse.json(response);
