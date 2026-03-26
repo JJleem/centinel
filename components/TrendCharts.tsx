@@ -62,9 +62,18 @@ export default function TrendCharts() {
       .finally(() => setLoading(false));
   }, [activeTab]);
 
-  const handleSelect = (game: ChartGame) => {
+  const handleSelect = (game: ChartGame, rank: number) => {
+    const tabConfig = TABS.find((t) => t.key === activeTab);
+    const chartLabel = tabConfig?.label.replace(" ", "") ?? undefined; // "글로벌탑" | "매출탑" | "캐주얼탑"
     window.dispatchEvent(
-      new CustomEvent("centinel:autorun", { detail: { query: game.title, appId: game.appId } })
+      new CustomEvent("centinel:autorun", {
+        detail: {
+          query: game.title,
+          appId: game.appId,
+          chartRank: activeTab === "surge" ? undefined : rank,
+          chartLabel: activeTab === "surge" ? undefined : chartLabel,
+        },
+      })
     );
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -142,7 +151,7 @@ export default function TrendCharts() {
               key={game.appId || i}
               className="relative flex items-center gap-2 sm:gap-2.5 p-2 sm:p-2.5 rounded-[12px] bg-white border text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[#C8E4F4] group cursor-pointer"
               style={{ borderColor: "#E8F4FC" }}
-              onClick={() => handleSelect(game)}
+              onClick={() => handleSelect(game, i + 1)}
             >
               {/* Rank */}
               <span

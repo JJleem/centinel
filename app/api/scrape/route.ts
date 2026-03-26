@@ -12,7 +12,7 @@ function normalizeInstalls(installs: string | number | undefined): string {
 }
 
 export async function POST(req: NextRequest) {
-  const { query, appId } = await req.json();
+  const { query, appId, chartRank, chartLabel } = await req.json();
 
   if (!query || typeof query !== "string") {
     return NextResponse.json({ error: "query is required" }, { status: 400 });
@@ -82,6 +82,15 @@ export async function POST(req: NextRequest) {
       );
 
     if (games.length >= 3) {
+      // If chart click provided rank directly, apply it to the matched game first
+      if (appId && chartRank != null && chartLabel) {
+        const matched = games.find((g) => g.appId === appId);
+        if (matched) {
+          matched.chartRank = chartRank;
+          matched.chartLabel = chartLabel;
+        }
+      }
+
       // Enrich with chartRank/chartLabel/rankChange from DB (non-critical)
       try {
         const appIds = games.map((g) => g.appId);
