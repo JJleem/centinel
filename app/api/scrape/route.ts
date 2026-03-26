@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
 
         for (const chart of CHARTS) {
           // Get two most recent distinct snapshot times for this chart
-          const { data: times } = await supabase
+          const { data: times, error: timesErr } = await supabase
             .from("chart_snapshots")
             .select("fetched_at")
             .eq("collection", chart.collection)
@@ -111,6 +111,7 @@ export async function POST(req: NextRequest) {
             .order("fetched_at", { ascending: false })
             .limit(200);
 
+          console.log(`[scrape] ${chart.collection}/${chart.category}: times=${times?.length ?? 0}, err=${timesErr?.message ?? "none"}`);
           if (!times || times.length === 0) continue;
 
           const latest = times[0].fetched_at;
@@ -127,6 +128,7 @@ export async function POST(req: NextRequest) {
             .eq("fetched_at", latest)
             .in("app_id", appIds);
 
+          console.log(`[scrape] newSnap for ${chart.label}: ${newSnap?.length ?? "null"} rows`);
           if (!newSnap) continue;
           const newRankMap = new Map(newSnap.map((r) => [r.app_id, r.rank]));
 
