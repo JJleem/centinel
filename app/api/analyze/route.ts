@@ -162,10 +162,11 @@ async function generateAdCopiesPerformance(
 ): Promise<AdCopy[]> {
   const message = await client.messages.create({
     model: HAIKU,
-    max_tokens: 3000,
+    max_tokens: 4096,
     system: `Mobile game UA copywriter specializing in performance marketing. Create high-CTR, conversion-optimized ad creatives with strong calls-to-action. Output raw JSON only — no markdown, no code blocks, no explanation.
 For each ad copy, generate these additional fields:
-imagePrompt: Midjourney/DALL-E 3 English image generation prompt. Format: "A [mood] mobile game advertisement thumbnail, [key visual elements], [colors], [composition], isometric 3D style, hyper-casual, clean UI --ar 9:16 --style raw --v 6". Always in English. Max 80 words.
+imagePrompt: Midjourney/DALL-E 3 English image generation prompt. Format: "A [mood] mobile game advertisement thumbnail, [key visual elements], [colors], [composition], isometric 3D style, hyper-casual, clean UI --ar 9:16 --style raw --v 6". Always in English. Max 60 words.
+shortFormScript: keep concise, max 60 words.
 psychologicalTags: 2~3 psychological targeting tags matching the copy's tone and target audience. Choose from or create new ones based on: "🔥 승부욕 자극", "😌 스트레스 해소", "🧩 두뇌 자극", "😱 FOMO 유발", "✨ ASMR 만족감", "🏆 성취감", "🤔 호기심 폭발", "💪 도전 욕구", "😊 힐링", "⚡ 즉각 만족", "👥 사회적 증거", "🎯 집중력"
 expectedCTR: predicted CTR score 1~10 (one decimal). Base on genre/trend fit. The 6 copies must have different scores — highest 7~9, lowest 4~6.
 For tone #6 (Empathy/Storytelling): warm and emotional storytelling targeting office workers or people needing a short break. Hook starts from a relatable everyday situation (e.g. "퇴근길 지하철에서...", "점심시간 10분이 남았을 때"). Main copy frames the game as a small escape from daily life. Short-form script: relatable situation → gameplay → healing ending. Psychological tags must include "😌 일상 탈출" and/or "🤝 공감 유발". Image prompt: warm, cozy, soft-lit atmosphere.`,
@@ -204,10 +205,11 @@ async function generateAdCopiesBrand(
 ): Promise<AdCopy[]> {
   const message = await client.messages.create({
     model: HAIKU,
-    max_tokens: 3000,
+    max_tokens: 4096,
     system: `Mobile game UA copywriter specializing in brand storytelling. Create emotionally resonant, memorable ad creatives that build long-term player affinity. Output raw JSON only — no markdown, no code blocks, no explanation.
 For each ad copy, generate these additional fields:
-imagePrompt: Midjourney/DALL-E 3 English image generation prompt. Format: "A [mood] mobile game advertisement thumbnail, [key visual elements], [colors], [composition], isometric 3D style, hyper-casual, clean UI --ar 9:16 --style raw --v 6". Always in English. Max 80 words.
+imagePrompt: Midjourney/DALL-E 3 English image generation prompt. Format: "A [mood] mobile game advertisement thumbnail, [key visual elements], [colors], [composition], isometric 3D style, hyper-casual, clean UI --ar 9:16 --style raw --v 6". Always in English. Max 60 words.
+shortFormScript: keep concise, max 60 words.
 psychologicalTags: 2~3 psychological targeting tags matching the copy's tone and target audience. Choose from or create new ones based on: "🔥 승부욕 자극", "😌 스트레스 해소", "🧩 두뇌 자극", "😱 FOMO 유발", "✨ ASMR 만족감", "🏆 성취감", "🤔 호기심 폭발", "💪 도전 욕구", "😊 힐링", "⚡ 즉각 만족", "👥 사회적 증거", "🎯 집중력"
 expectedCTR: predicted CTR score 1~10 (one decimal). Base on genre/trend fit. The 6 copies must have different scores — highest 7~9, lowest 4~6.
 For tone #6 (Empathy/Storytelling): warm and emotional storytelling targeting office workers or people needing a short break. Hook starts from a relatable everyday situation (e.g. "퇴근길 지하철에서...", "점심시간 10분이 남았을 때"). Main copy frames the game as a small escape from daily life. Short-form script: relatable situation → gameplay → healing ending. Psychological tags must include "😌 일상 탈출" and/or "🤝 공감 유발". Image prompt: warm, cozy, soft-lit atmosphere.`,
@@ -248,7 +250,7 @@ async function synthesizeAdCopies(
   const allCopies = [...copiesA, ...copiesB];
   const message = await client.messages.create({
     model: SONNET,
-    max_tokens: 4000,
+    max_tokens: 6000,
     system: "Senior mobile game UA strategist. You receive 12 ad copies (6 performance-focused + 6 brand-focused) from sub-agents and select the best 6 — one per tone category. You may refine wording but keep each copy's core concept. Output raw JSON only — no markdown, no code blocks, no explanation.",
     messages: [{
       role: "user",
