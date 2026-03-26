@@ -79,8 +79,7 @@ export default function TrendCard({ insight, query, usedFallback, games, lang, r
         </div>
       )}
 
-      <div className="flex items-center gap-3 mb-4">
-        <h2 className="text-lg font-bold text-[#0A1929]">트렌드 인사이트</h2>
+      <div className="flex items-center gap-2 mb-4">
         <span className="ml-auto text-xs text-[#4A6080] bg-[#EBF5FC] px-2 py-1 rounded-full border border-[#C8E4F4]">
           {query}
         </span>

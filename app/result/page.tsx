@@ -140,6 +140,10 @@ export default function ResultPage() {
 
             {/* Trend insight */}
             <div className="mb-8">
+              <div className="flex items-center gap-2 mb-2 px-1">
+                <span className="w-[3px] h-5 rounded-full shrink-0" style={{ background: "linear-gradient(180deg, #0B7FD4, #6B4EFF)" }} />
+                <h2 className="text-lg font-bold text-[#0A1929]">트렌드 인사이트</h2>
+              </div>
               <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} resultId={typeof window !== "undefined" ? localStorage.getItem("centinel_current_id") : null} />
             </div>
 
