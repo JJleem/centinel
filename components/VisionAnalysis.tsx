@@ -330,63 +330,48 @@ export default function VisionAnalysis({ games, lang: langProp = "KO", resultId,
       )}
 
       {state === "done" && result && (
-        <div className="bg-white border border-[#E8F4FC] rounded-[14px] overflow-hidden shadow-sm">
-          <div
-            className="px-5 py-3 flex items-center justify-between"
-            style={{ background: "linear-gradient(135deg, #0B7FD4 0%, #6B4EFF 100%)" }}
-          >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <p className="text-white font-semibold text-sm">📸 Visual Intelligence</p>
-              <p className="text-white/70 text-xs mt-0.5">{L.headerSub}</p>
+              <p className="text-[10px] font-semibold text-[#4A6080] uppercase tracking-wider mb-1">{L.coreInteraction}</p>
+              <p className="text-sm text-[#0A1929] leading-relaxed">{result.coreInteraction}</p>
             </div>
-            <span className="text-white/70 text-xs">{result.analyzedCount}{L.analyzed}</span>
-          </div>
-
-          <div className="p-5 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <p className="text-[10px] font-semibold text-[#4A6080] uppercase tracking-wider mb-1">{L.coreInteraction}</p>
-                <p className="text-sm text-[#0A1929] leading-relaxed">{result.coreInteraction}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold text-[#4A6080] uppercase tracking-wider mb-1.5">{L.uiComplexity}</p>
-                <ComplexityBar level={result.uiComplexity} />
-              </div>
-            </div>
-
-            <hr style={{ borderColor: "#EEF6FB" }} />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <p className="text-[10px] font-semibold text-[#4A6080] uppercase tracking-wider mb-1">{L.visualHook}</p>
-                <p className="text-sm text-[#0A1929] leading-relaxed">{result.visualHook}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold text-[#4A6080] uppercase tracking-wider mb-1">{L.colorPalette}</p>
-                <p className="text-sm text-[#0A1929] leading-relaxed">{result.colorPalette}</p>
-              </div>
-            </div>
-
-            <hr style={{ borderColor: "#EEF6FB" }} />
-
             <div>
-              <p className="text-[10px] font-semibold text-[#4A6080] uppercase tracking-wider mb-2">{L.keyElements}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {result.keyVisualElements.map((el, i) => (
-                  <span key={i} className="px-2.5 py-1 text-xs rounded-full border"
-                    style={{ background: "#EBF5FC", color: "#0B7FD4", borderColor: "#C8E4F4" }}>
-                    {el}
-                  </span>
-                ))}
-              </div>
+              <p className="text-[10px] font-semibold text-[#4A6080] uppercase tracking-wider mb-1.5">{L.uiComplexity}</p>
+              <ComplexityBar level={result.uiComplexity} />
             </div>
           </div>
 
-          <div className="px-5 pb-4">
-            <button onClick={handleReanalyze} className="text-xs text-[#4A6080] hover:text-[#0B7FD4] transition-colors">
-              {L.reanalyze}
-            </button>
+          <hr style={{ borderColor: "#EEF6FB" }} />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className="text-[10px] font-semibold text-[#4A6080] uppercase tracking-wider mb-1">{L.visualHook}</p>
+              <p className="text-sm text-[#0A1929] leading-relaxed">{result.visualHook}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold text-[#4A6080] uppercase tracking-wider mb-1">{L.colorPalette}</p>
+              <p className="text-sm text-[#0A1929] leading-relaxed">{result.colorPalette}</p>
+            </div>
           </div>
+
+          <hr style={{ borderColor: "#EEF6FB" }} />
+
+          <div>
+            <p className="text-[10px] font-semibold text-[#4A6080] uppercase tracking-wider mb-2">{L.keyElements}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {result.keyVisualElements.map((el, i) => (
+                <span key={i} className="px-2.5 py-1 text-xs rounded-full border"
+                  style={{ background: "#EBF5FC", color: "#0B7FD4", borderColor: "#C8E4F4" }}>
+                  {el}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <button onClick={handleReanalyze} className="text-xs text-[#4A6080] hover:text-[#0B7FD4] transition-colors">
+            {L.reanalyze}
+          </button>
         </div>
       )}
     </div>
