@@ -81,11 +81,29 @@ export async function GET() {
       isNewEntry: g.isNewEntry,
     }));
 
+  const noChanges = rising.length === 0;
+
+  // 변동 없을 때도 현재 스냅샷 그대로 표시
+  const games = noChanges
+    ? newSnap
+        .sort((a, b) => a.rank - b.rank)
+        .map((g) => ({
+          title: g.title,
+          appId: g.app_id,
+          developer: g.developer,
+          score: g.score ?? 0,
+          icon: g.icon ?? "",
+          genre: g.genre ?? "Game",
+          rankChange: 0,
+          isNewEntry: false,
+        }))
+    : rising;
+
   return NextResponse.json({
-    games: rising,
+    games,
     snapshotAge: Math.round((latestDate.getTime() - new Date(previous).getTime()) / 60000),
     latestSnapshotAt: latest,
     previousSnapshotAt: previous,
-    noChanges: rising.length === 0,
+    noChanges,
   });
 }
