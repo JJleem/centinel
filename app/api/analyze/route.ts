@@ -9,8 +9,11 @@ import {
   RisingInsight,
   BreakoutCandidate,
   SimilarGame,
+  VisionResult,
 } from "@/types";
 import { supabase } from "@/lib/supabase";
+
+type ImageMediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SONNET = "claude-sonnet-4-20250514";
@@ -82,7 +85,8 @@ async function analyzeTrends(games: GameData[], lang: string): Promise<TrendAnal
 // ── Agent 2A: Insight Summarizer — Analytical variant (Haiku) ─────────────
 async function summarizeInsightsAnalytical(
   trendAnalysis: TrendAnalysis,
-  lang: string
+  lang: string,
+  visionContext?: string
 ): Promise<InsightSummary> {
   const message = await client.messages.create({
     model: HAIKU,
@@ -90,7 +94,7 @@ async function summarizeInsightsAnalytical(
     system: "Mobile gaming insight expert for UA marketers. Focus on data-driven patterns, measurable market signals, and ROI-oriented opportunities. Be concise. Keep each summary item under 120 characters. Output raw JSON only — no markdown, no code blocks, no explanation.",
     messages: [{
       role: "user",
-      content: `Based on this trend analysis, create an analytical insight summary:\n\nMechanics: ${trendAnalysis.mechanics.join(", ")}\nRevenue Models: ${trendAnalysis.revenueModels.join(", ")}\nKeywords: ${trendAnalysis.keywords.join(", ")}\nAnalysis: ${trendAnalysis.rawAnalysis}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
+      content: `Based on this trend analysis, create an analytical insight summary:\n\nMechanics: ${trendAnalysis.mechanics.join(", ")}\nRevenue Models: ${trendAnalysis.revenueModels.join(", ")}\nKeywords: ${trendAnalysis.keywords.join(", ")}\nAnalysis: ${trendAnalysis.rawAnalysis}${visionContext ?? ""}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
 {
   "summary": ["insight 1", "insight 2", "insight 3", "insight 4", "insight 5"],
   "topKeywords": ["keyword1", "keyword2", "keyword3"],
@@ -108,7 +112,8 @@ async function summarizeInsightsAnalytical(
 // ── Agent 2B: Insight Summarizer — Creative variant (Haiku) ──────────────
 async function summarizeInsightsCreative(
   trendAnalysis: TrendAnalysis,
-  lang: string
+  lang: string,
+  visionContext?: string
 ): Promise<InsightSummary> {
   const message = await client.messages.create({
     model: HAIKU,
@@ -116,7 +121,7 @@ async function summarizeInsightsCreative(
     system: "Mobile gaming insight expert for UA marketers. Focus on creative opportunities, emerging behavioral trends, and untapped audience segments. Be concise. Keep each summary item under 120 characters. Output raw JSON only — no markdown, no code blocks, no explanation.",
     messages: [{
       role: "user",
-      content: `Based on this trend analysis, create a creative insight summary:\n\nMechanics: ${trendAnalysis.mechanics.join(", ")}\nRevenue Models: ${trendAnalysis.revenueModels.join(", ")}\nKeywords: ${trendAnalysis.keywords.join(", ")}\nAnalysis: ${trendAnalysis.rawAnalysis}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
+      content: `Based on this trend analysis, create a creative insight summary:\n\nMechanics: ${trendAnalysis.mechanics.join(", ")}\nRevenue Models: ${trendAnalysis.revenueModels.join(", ")}\nKeywords: ${trendAnalysis.keywords.join(", ")}\nAnalysis: ${trendAnalysis.rawAnalysis}${visionContext ?? ""}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
 {
   "summary": ["insight 1", "insight 2", "insight 3", "insight 4", "insight 5"],
   "topKeywords": ["keyword1", "keyword2", "keyword3"],
@@ -162,7 +167,8 @@ async function synthesizeInsight(
 async function generateAdCopiesPerformance(
   insight: InsightSummary,
   query: string,
-  lang: string
+  lang: string,
+  visionContext?: string
 ): Promise<AdCopy[]> {
   const message = await client.messages.create({
     model: HAIKU,
@@ -176,7 +182,7 @@ expectedCTR: predicted CTR score 1~10 (one decimal). Base on genre/trend fit. Th
 For tone #6 (Empathy/Storytelling): warm and emotional storytelling targeting office workers or people needing a short break. Hook starts from a relatable everyday situation (e.g. "퇴근길 지하철에서...", "점심시간 10분이 남았을 때"). Main copy frames the game as a small escape from daily life. Short-form script: relatable situation → gameplay → healing ending. Psychological tags must include "😌 일상 탈출" and/or "🤝 공감 유발". Image prompt: warm, cozy, soft-lit atmosphere.`,
     messages: [{
       role: "user",
-      content: `Create 6 distinct performance-focused ad copies for a hyper-casual game in the "${query}" space.\n\nMarket Insights:\n${insight.summary.join("\n")}\nTop Keywords: ${insight.topKeywords.join(", ")}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
+      content: `Create 6 distinct performance-focused ad copies for a hyper-casual game in the "${query}" space.\n\nMarket Insights:\n${insight.summary.join("\n")}\nTop Keywords: ${insight.topKeywords.join(", ")}${visionContext ?? ""}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
 {
   "adCopies": [
     {
@@ -205,7 +211,8 @@ Make each of the 6 copies distinct in tone: 1) Excitement, 2) Challenge, 3) Curi
 async function generateAdCopiesBrand(
   insight: InsightSummary,
   query: string,
-  lang: string
+  lang: string,
+  visionContext?: string
 ): Promise<AdCopy[]> {
   const message = await client.messages.create({
     model: HAIKU,
@@ -219,7 +226,7 @@ expectedCTR: predicted CTR score 1~10 (one decimal). Base on genre/trend fit. Th
 For tone #6 (Empathy/Storytelling): warm and emotional storytelling targeting office workers or people needing a short break. Hook starts from a relatable everyday situation (e.g. "퇴근길 지하철에서...", "점심시간 10분이 남았을 때"). Main copy frames the game as a small escape from daily life. Short-form script: relatable situation → gameplay → healing ending. Psychological tags must include "😌 일상 탈출" and/or "🤝 공감 유발". Image prompt: warm, cozy, soft-lit atmosphere.`,
     messages: [{
       role: "user",
-      content: `Create 6 distinct brand-focused ad copies for a hyper-casual game in the "${query}" space.\n\nMarket Insights:\n${insight.summary.join("\n")}\nTop Keywords: ${insight.topKeywords.join(", ")}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
+      content: `Create 6 distinct brand-focused ad copies for a hyper-casual game in the "${query}" space.\n\nMarket Insights:\n${insight.summary.join("\n")}\nTop Keywords: ${insight.topKeywords.join(", ")}${visionContext ?? ""}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
 {
   "adCopies": [
     {
@@ -279,6 +286,84 @@ async function synthesizeAdCopies(
   const text = message.content[0].type === "text" ? message.content[0].text : "";
   const parsed = parseJSON<{ adCopies: AdCopy[] }>(text, "Orchestrator: Ad Copy Synthesis");
   return parsed.adCopies;
+}
+
+// ── Agent V: Vision Analysis (Sonnet, parallel with trend analysis) ────────
+async function analyzeVision(games: GameData[], lang: string): Promise<VisionResult | null> {
+  const imageJobs = games
+    .map((g) => ({ title: g.title, url: g.screenshots?.[0] ?? null }))
+    .filter((j): j is { title: string; url: string } => j.url !== null);
+
+  if (imageJobs.length < 3) return null;
+
+  const fetchResults = await Promise.allSettled(
+    imageJobs.map(async (job) => {
+      const res = await fetch(job.url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error("fetch failed");
+      const contentType = res.headers.get("content-type") ?? "image/jpeg";
+      const validTypes: ImageMediaType[] = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+      const mediaType: ImageMediaType = validTypes.find((t) => contentType.includes(t)) ?? "image/jpeg";
+      const buffer = await res.arrayBuffer();
+      const data = Buffer.from(buffer).toString("base64");
+      return { title: job.title, data, mediaType };
+    })
+  );
+
+  const fetched = fetchResults
+    .filter((r): r is PromiseFulfilledResult<{ title: string; data: string; mediaType: ImageMediaType }> => r.status === "fulfilled")
+    .map((r) => r.value);
+
+  if (fetched.length < 3) return null;
+
+  type ContentBlock =
+    | { type: "text"; text: string }
+    | { type: "image"; source: { type: "base64"; media_type: ImageMediaType; data: string } };
+
+  const imageBlocks: ContentBlock[] = fetched.map((img) => ({
+    type: "image",
+    source: { type: "base64", media_type: img.mediaType, data: img.data },
+  }));
+
+  const gameList = fetched.map((img, i) => `${i + 1}. ${img.title}`).join("\n");
+  const langInstruction = lang === "KO"
+    ? "모든 텍스트 필드를 한국어로 작성하세요."
+    : "Write all text fields in English.";
+
+  const content: ContentBlock[] = [
+    {
+      type: "text",
+      text: `You are a mobile game UI/UX analyst. Below are ${fetched.length} hyper-casual game screenshots (games: ${gameList}).
+
+Analyze these screenshots and identify patterns across all games. Be thorough and specific.
+
+1. Core interaction mechanic (tap/swipe/drag/tilt — most common across games)
+2. Visual hook in first 3 seconds (specific elements that grab attention immediately)
+3. Color palette and mood (dominant 3-4 colors, emotional tone)
+4. UI complexity level (1=extremely simple, 5=complex — give number and brief reason)
+5. Key visual elements that drive engagement (3-5 specific elements observed)
+
+${langInstruction}
+Output raw JSON only — no markdown, no code blocks:
+{
+  "coreInteraction": "2-3 sentence description",
+  "visualHook": "2-3 sentence description",
+  "colorPalette": "specific colors and emotional mood",
+  "uiComplexity": 2,
+  "keyVisualElements": ["element 1", "element 2", "element 3", "element 4"]
+}`,
+    },
+    ...imageBlocks,
+  ];
+
+  const message = await client.messages.create({
+    model: SONNET,
+    max_tokens: 1200,
+    messages: [{ role: "user", content }],
+  });
+
+  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  const parsed = parseJSON<Omit<VisionResult, "analyzedCount">>(text, "Agent V: Vision Analysis");
+  return { ...parsed, analyzedCount: fetched.length };
 }
 
 // ── Agent 0: Why Chart (Haiku, for any game appearing in top chart) ────────
@@ -422,22 +507,28 @@ export async function POST(req: NextRequest) {
         // ── Orchestrator Start ──────────────────────────────────────────
         send({ event: "orchestrator_start", message: "오케스트레이터 시작" });
 
-        // ── Stage 1: Trend Analysis + Why Chart (parallel) ────────────
+        // ── Stage 1: Trend Analysis + Why Chart + Vision (parallel) ──
         // Only take the top-ranked chart game to avoid showing multiple "왜 인기인가" cards
         const chartGames = (games as GameData[])
           .filter((g) => g.chartRank != null)
           .sort((a, b) => (a.chartRank ?? 99) - (b.chartRank ?? 99))
           .slice(0, 1);
-        const [trendAnalysis, risingInsights] = await Promise.all([
+        const [trendAnalysis, risingInsights, visionResult] = await Promise.all([
           analyzeTrends(games as GameData[], lang),
           chartGames.length > 0 ? analyzeWhyChart(chartGames, lang) : Promise.resolve([]),
+          analyzeVision(games as GameData[], lang).catch(() => null),
         ]);
         send({ event: "analysis_done", message: "트렌드 분석 완료 (Sonnet)" });
 
+        // Build vision context string to enrich downstream prompts
+        const visionContext = visionResult
+          ? `\n\nVisual Intelligence (Claude Vision — ${visionResult.analyzedCount} screenshots):\n- Core Interaction: ${visionResult.coreInteraction}\n- Visual Hook: ${visionResult.visualHook}\n- Color Palette: ${visionResult.colorPalette}\n- UI Complexity: ${visionResult.uiComplexity}/5\n- Key Visual Elements: ${visionResult.keyVisualElements.join(", ")}`
+          : undefined;
+
         // ── Stage 2: Insight Ensemble (2x Haiku, parallel) ────────────
         const [insightA, insightB] = await Promise.all([
-          summarizeInsightsAnalytical(trendAnalysis, lang),
-          summarizeInsightsCreative(trendAnalysis, lang),
+          summarizeInsightsAnalytical(trendAnalysis, lang, visionContext),
+          summarizeInsightsCreative(trendAnalysis, lang, visionContext),
         ]);
         send({ event: "insights_ensemble_done", message: "인사이트 앙상블 완료 (Haiku ×2)" });
 
@@ -446,8 +537,8 @@ export async function POST(req: NextRequest) {
 
         // ── Stage 3: Ad Copy Ensemble (2x Haiku, parallel) ────────────
         const [copiesA, copiesB] = await Promise.all([
-          generateAdCopiesPerformance(insight, query, lang),
-          generateAdCopiesBrand(insight, query, lang),
+          generateAdCopiesPerformance(insight, query, lang, visionContext),
+          generateAdCopiesBrand(insight, query, lang, visionContext),
         ]);
         send({ event: "copies_ensemble_done", message: "광고 소재 앙상블 완료 (Haiku ×2)" });
 
@@ -469,6 +560,7 @@ export async function POST(req: NextRequest) {
           risingInsights: risingInsights.length > 0 ? risingInsights : undefined,
           similarGames: (similarGames as SimilarGame[] | undefined)?.length ? similarGames : undefined,
           breakoutCandidates: breakoutCandidates.length > 0 ? breakoutCandidates : undefined,
+          visionResult: visionResult ?? null,
           createdAt: new Date().toISOString(),
         };
         send({ event: "final_selection_done", message: "최종 선별 완료", result });

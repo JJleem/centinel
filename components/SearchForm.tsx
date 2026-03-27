@@ -25,7 +25,7 @@ type StepStatus = "waiting" | "active" | "done" | "error";
 
 const STEP_LABELS = [
   "Google Play 데이터 수집",
-  "트렌드 분석 에이전트 (Sonnet)",
+  "트렌드 분석 + Visual Intelligence (Sonnet)",
   "인사이트 앙상블 (Haiku ×2 병렬)",
   "광고 소재 앙상블 (Haiku ×2 병렬)",
   "오케스트레이터 최종 선별 (Sonnet)",

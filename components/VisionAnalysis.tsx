@@ -298,19 +298,7 @@ export default function VisionAnalysis({ games, lang: langProp = "KO", resultId,
 
       {hasScreenshots && <ScreenshotGrid screenshots={screenshots} />}
 
-      {state === "idle" && (
-        <button
-          onClick={handleAnalyze}
-          disabled={!hasScreenshots}
-          className="w-full flex flex-col items-center justify-center gap-1 py-3.5 rounded-[10px] border border-dashed transition-all hover:border-[#0B7FD4] hover:bg-[#F8FBFF] disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ borderColor: "#C8E4F4" }}
-        >
-          <span className="text-sm font-semibold text-[#0B7FD4]">{L.title}</span>
-          <span className="text-xs text-[#4A6080]">
-            {hasScreenshots ? L.subtitle : L.noScreenshots}
-          </span>
-        </button>
-      )}
+      {state === "idle" && null}
 
       {state === "loading" && (
         <div className="flex items-center gap-3 py-4 px-4 rounded-[10px] bg-[#F8FBFF] border border-[#E8F4FC]">
