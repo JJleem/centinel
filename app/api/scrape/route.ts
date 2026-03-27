@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GameData, ScrapeResponse, SimilarGame } from "@/types";
+import { GameData, ScrapeResponse } from "@/types";
 import { supabase } from "@/lib/supabase";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -162,29 +162,7 @@ export async function POST(req: NextRequest) {
         console.log("[scrape] chart enrichment done. chartRanks:", games.map(g => `${g.appId}:${g.chartRank ?? "none"}`).join(", "));
       } catch (e) { console.error("[scrape] chart enrichment failed:", e); }
 
-      // Fetch similar games for the highest-ranked chart game (any search, not just chart click)
-      let similarGames: SimilarGame[] = [];
-      try {
-        // Use appId from chart click, or fall back to the top-ranked chart game in results
-        const chartGames = games.filter((g) => g.chartRank != null).sort((a, b) => (a.chartRank ?? 99) - (b.chartRank ?? 99));
-        const targetId = appId ?? chartGames[0]?.appId;
-        if (targetId) {
-          const similarList = await gplay.similar({ appId: targetId, lang: "en", country: "us" });
-          const analyzedIds = new Set(games.map((g) => g.appId));
-          similarGames = (similarList as { appId?: string; title?: string; developer?: string; icon?: string; score?: number }[])
-            .filter((a) => a.appId && !analyzedIds.has(a.appId))
-            .slice(0, 10)
-            .map((a) => ({
-              appId: a.appId!,
-              title: a.title ?? "Unknown",
-              developer: a.developer ?? "",
-              icon: a.icon ?? "",
-              score: a.score ?? 0,
-            }));
-        }
-      } catch { /* non-critical */ }
-
-      const response: ScrapeResponse = { games, source: "scrape", usedFallback: false, similarGames: similarGames.length > 0 ? similarGames : undefined };
+      const response: ScrapeResponse = { games, source: "scrape", usedFallback: false };
       return NextResponse.json(response);
     }
 

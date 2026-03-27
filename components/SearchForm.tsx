@@ -124,7 +124,7 @@ export default function SearchForm() {
       const analyzeRes = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: searchQuery, games: scrapeData.games, lang, similarGames: scrapeData.similarGames }),
+        body: JSON.stringify({ query: searchQuery, games: scrapeData.games, lang }),
       });
       if (!analyzeRes.ok) throw new Error("Analyze request failed");
       if (!analyzeRes.body) throw new Error("No response body");

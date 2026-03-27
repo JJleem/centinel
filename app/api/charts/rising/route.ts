@@ -2,31 +2,43 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
 export async function GET() {
-  // Get the two most recent distinct snapshot times for TOP_FREE/GAME
-  const { data: times, error: timesErr } = await supabase
+  // Step 1: get the most recent snapshot time
+  const { data: latestRow, error: latestErr } = await supabase
     .from("chart_snapshots")
     .select("fetched_at")
     .eq("collection", "TOP_FREE")
     .eq("category", "GAME")
     .order("fetched_at", { ascending: false })
-    .limit(200);
+    .limit(1)
+    .single();
 
-  if (timesErr || !times || times.length === 0) {
+  if (latestErr || !latestRow) {
     return NextResponse.json({ error: "no_data" }, { status: 404 });
   }
 
-  // Find two distinct snapshot buckets (at least 1 hour apart)
-  const latest = times[0].fetched_at;
+  const latest = latestRow.fetched_at;
   const latestDate = new Date(latest);
-  const previous = times.find(
-    (t) => new Date(t.fetched_at).getTime() < latestDate.getTime() - 60 * 60 * 1000
-  );
 
-  if (!previous) {
+  // Step 2: find the most recent snapshot that's at least 1 hour older than the latest.
+  // By querying with .lt() directly we never get truncated by a row limit —
+  // any historical snapshot (days/weeks old) will be found.
+  const { data: previousRow } = await supabase
+    .from("chart_snapshots")
+    .select("fetched_at")
+    .eq("collection", "TOP_FREE")
+    .eq("category", "GAME")
+    .lt("fetched_at", new Date(latestDate.getTime() - 60 * 60 * 1000).toISOString())
+    .order("fetched_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!previousRow) {
     return NextResponse.json({ error: "insufficient_snapshots", latestSnapshotAt: latest }, { status: 202 });
   }
 
-  // Fetch both snapshots
+  const previous = previousRow.fetched_at;
+
+  // Step 3: fetch both snapshots
   const [{ data: newSnap }, { data: oldSnap }] = await Promise.all([
     supabase
       .from("chart_snapshots")
@@ -39,7 +51,7 @@ export async function GET() {
       .select("app_id, rank")
       .eq("collection", "TOP_FREE")
       .eq("category", "GAME")
-      .eq("fetched_at", previous.fetched_at),
+      .eq("fetched_at", previous),
   ]);
 
   if (!newSnap || !oldSnap) {
@@ -51,10 +63,11 @@ export async function GET() {
   const rising = newSnap
     .map((g) => {
       const oldRank = oldRankMap.get(g.app_id);
-      const rankChange = oldRank != null ? oldRank - g.rank : 30; // new entry = big jump
-      return { ...g, rankChange };
+      const isNewEntry = oldRank == null;
+      const rankChange = isNewEntry ? 31 - g.rank : oldRank - g.rank;
+      return { ...g, rankChange, isNewEntry };
     })
-    .filter((g) => g.rankChange > 0) // only actually rising
+    .filter((g) => g.rankChange > 0)
     .sort((a, b) => b.rankChange - a.rankChange)
     .slice(0, 30)
     .map((g) => ({
@@ -65,13 +78,14 @@ export async function GET() {
       icon: g.icon ?? "",
       genre: g.genre ?? "Game",
       rankChange: g.rankChange,
+      isNewEntry: g.isNewEntry,
     }));
 
   return NextResponse.json({
     games: rising,
-    snapshotAge: Math.round((latestDate.getTime() - new Date(previous.fetched_at).getTime()) / 60000),
+    snapshotAge: Math.round((latestDate.getTime() - new Date(previous).getTime()) / 60000),
     latestSnapshotAt: latest,
-    previousSnapshotAt: previous.fetched_at,
+    previousSnapshotAt: previous,
     noChanges: rising.length === 0,
   });
 }

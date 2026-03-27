@@ -13,26 +13,6 @@ export interface GameData {
   chartLabel?: string;  // which chart: "글로벌탑" | "매출탑" | "캐주얼탑"
 }
 
-export interface SimilarGame {
-  appId: string;
-  title: string;
-  developer: string;
-  icon: string;
-  score: number;
-}
-
-export interface BreakoutCandidate {
-  appId: string;
-  title: string;
-  developer: string;
-  icon: string;
-  score: number;
-  genre: string;
-  chartRank: number;
-  chartLabel: string;
-  rankChange: number;
-}
-
 export interface RisingInsight {
   appId: string;
   title: string;
@@ -82,8 +62,6 @@ export interface AnalysisResult {
   insight: InsightSummary;
   adCopies: AdCopy[];
   risingInsights?: RisingInsight[];
-  similarGames?: SimilarGame[];
-  breakoutCandidates?: BreakoutCandidate[];
   visionResult?: VisionResult | null;
   createdAt: string;
   usedFallback?: boolean;
@@ -94,7 +72,6 @@ export interface ScrapeResponse {
   games: GameData[];
   source: "scrape" | "fallback";
   usedFallback: boolean;
-  similarGames?: SimilarGame[];
 }
 
 export interface AnalyzeResponse {

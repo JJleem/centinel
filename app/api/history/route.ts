@@ -28,8 +28,7 @@ export async function POST(req: NextRequest) {
       insight: result.insight,
       ad_copies: result.adCopies,
       rising_insights: result.risingInsights ?? null,
-      similar_games: result.similarGames ?? null,
-      breakout_candidates: result.breakoutCandidates ?? null,
+      vision_result: result.visionResult ?? null,
       lang: result.lang ?? "EN",
     })
     .select("id")

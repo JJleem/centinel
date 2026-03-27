@@ -7,11 +7,8 @@ import {
   AdCopy,
   AnalysisResult,
   RisingInsight,
-  BreakoutCandidate,
-  SimilarGame,
   VisionResult,
 } from "@/types";
-import { supabase } from "@/lib/supabase";
 
 type ImageMediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
 
@@ -408,81 +405,8 @@ async function analyzeWhyChart(
   });
 }
 
-async function findBreakoutCandidates(analyzedAppIds: string[]): Promise<BreakoutCandidate[]> {
-  const CHARTS = [
-    { collection: "TOP_FREE", category: "GAME",        label: "글로벌탑" },
-    { collection: "GROSSING", category: "GAME",        label: "매출탑" },
-    { collection: "TOP_FREE", category: "GAME_CASUAL", label: "캐주얼탑" },
-  ];
-
-  const candidates: BreakoutCandidate[] = [];
-  const seenIds = new Set(analyzedAppIds);
-
-  for (const chart of CHARTS) {
-    const { data: times } = await supabase
-      .from("chart_snapshots")
-      .select("fetched_at")
-      .eq("collection", chart.collection)
-      .eq("category", chart.category)
-      .order("fetched_at", { ascending: false })
-      .limit(100);
-
-    if (!times || times.length === 0) continue;
-
-    const latest = times[0].fetched_at;
-    const latestDate = new Date(latest);
-    const previous = times.find(
-      (t) => new Date(t.fetched_at).getTime() < latestDate.getTime() - 60 * 60 * 1000
-    );
-    if (!previous) continue;
-
-    const [{ data: newSnap }, { data: oldSnap }] = await Promise.all([
-      supabase
-        .from("chart_snapshots")
-        .select("app_id, title, developer, icon, score, genre, rank")
-        .eq("collection", chart.collection)
-        .eq("category", chart.category)
-        .eq("fetched_at", latest),
-      supabase
-        .from("chart_snapshots")
-        .select("app_id, rank")
-        .eq("collection", chart.collection)
-        .eq("category", chart.category)
-        .eq("fetched_at", previous.fetched_at),
-    ]);
-
-    if (!newSnap || !oldSnap) continue;
-
-    const oldRankMap = new Map(oldSnap.map((r) => [r.app_id, r.rank]));
-
-    for (const g of newSnap) {
-      if (seenIds.has(g.app_id)) continue;
-      const oldRank = oldRankMap.get(g.app_id);
-      if (oldRank == null) continue;
-      const rankChange = oldRank - g.rank;
-      if (rankChange <= 0) continue;
-      seenIds.add(g.app_id);
-      candidates.push({
-        appId: g.app_id,
-        title: g.title ?? "Unknown",
-        developer: g.developer ?? "",
-        icon: g.icon ?? "",
-        score: g.score ?? 0,
-        genre: g.genre ?? "",
-        chartRank: g.rank,
-        chartLabel: chart.label,
-        rankChange,
-      });
-    }
-  }
-
-  return candidates
-    .sort((a, b) => b.rankChange - a.rankChange)
-    .slice(0, 10);
-}
-
 export async function POST(req: NextRequest) {
-  const { query, games, lang = "EN", similarGames } = await req.json();
+  const { query, games, lang = "EN" } = await req.json();
 
   if (!query || !games || !Array.isArray(games)) {
     return NextResponse.json({ error: "query and games are required" }, { status: 400 });
@@ -508,11 +432,15 @@ export async function POST(req: NextRequest) {
         send({ event: "orchestrator_start", message: "오케스트레이터 시작" });
 
         // ── Stage 1: Trend Analysis + Why Chart + Vision (parallel) ──
-        // Only take the top-ranked chart game to avoid showing multiple "왜 인기인가" cards
-        const chartGames = (games as GameData[])
+        // Prefer chart game whose title matches the search query; fall back to highest rank
+        const allChartGames = (games as GameData[])
           .filter((g) => g.chartRank != null)
-          .sort((a, b) => (a.chartRank ?? 99) - (b.chartRank ?? 99))
-          .slice(0, 1);
+          .sort((a, b) => (a.chartRank ?? 99) - (b.chartRank ?? 99));
+        const queryLower = query.toLowerCase();
+        const matchedChartGame = allChartGames.find(
+          (g) => g.title.toLowerCase().includes(queryLower) || queryLower.includes(g.title.toLowerCase())
+        );
+        const chartGames = matchedChartGame ? [matchedChartGame] : allChartGames.slice(0, 1);
         const [trendAnalysis, risingInsights, visionResult] = await Promise.all([
           analyzeTrends(games as GameData[], lang),
           chartGames.length > 0 ? analyzeWhyChart(chartGames, lang) : Promise.resolve([]),
@@ -545,12 +473,6 @@ export async function POST(req: NextRequest) {
         // ── Orchestrator: Select best ad copies (Sonnet) ───────────────
         const adCopies = await synthesizeAdCopies(copiesA, copiesB, query, lang);
 
-        let breakoutCandidates: BreakoutCandidate[] = [];
-        try {
-          const analyzedIds = (games as GameData[]).map((g) => g.appId);
-          breakoutCandidates = await findBreakoutCandidates(analyzedIds);
-        } catch { /* non-critical */ }
-
         const result: AnalysisResult = {
           query,
           games: games as GameData[],
@@ -558,8 +480,6 @@ export async function POST(req: NextRequest) {
           insight,
           adCopies,
           risingInsights: risingInsights.length > 0 ? risingInsights : undefined,
-          similarGames: (similarGames as SimilarGame[] | undefined)?.length ? similarGames : undefined,
-          breakoutCandidates: breakoutCandidates.length > 0 ? breakoutCandidates : undefined,
           visionResult: visionResult ?? null,
           createdAt: new Date().toISOString(),
         };

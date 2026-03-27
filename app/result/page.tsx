@@ -12,8 +12,6 @@ function SafeImg({ src, alt, className }: { src: string; alt: string; className?
 import { useCallback } from "react";
 import TrendCard from "@/components/TrendCard";
 import RisingInsightsSection from "@/components/RisingInsightsSection";
-import SimilarGamesSection from "@/components/SimilarGamesSection";
-import BreakoutSection from "@/components/BreakoutSection";
 import AdCopyCard from "@/components/AdCopyCard";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import PdfDownload from "@/components/PdfDownload";
@@ -138,16 +136,6 @@ export default function ResultPage() {
             {/* Why Popular — above trend insight */}
             {result.risingInsights && result.risingInsights.length > 0 && (
               <RisingInsightsSection insights={result.risingInsights} games={result.games} lang={result.lang} createdAt={result.createdAt} />
-            )}
-
-            {/* Similar games (only when a chart game was analyzed) */}
-            {result.similarGames && result.similarGames.length > 0 && (
-              <SimilarGamesSection games={result.similarGames} sourceTitle={result.query} lang={result.lang} />
-            )}
-
-            {/* Breakout candidates */}
-            {result.breakoutCandidates && result.breakoutCandidates.length > 0 && (
-              <BreakoutSection candidates={result.breakoutCandidates} lang={result.lang} />
             )}
 
             {/* Trend insight */}

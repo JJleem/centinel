@@ -43,9 +43,13 @@ export async function POST() {
       results.push({ ...tab, count: rows.length });
     } catch (err) {
       console.error(`[save] Failed for ${tab.collection}/${tab.category}:`, err);
-      results.push({ ...tab, count: -1 });
+      results.push({ ...tab, count: -1, error: String(err) });
     }
   }
 
-  return NextResponse.json({ ok: true, fetchedAt, results });
+  const anyFailed = results.some((r) => r.count === -1);
+  return NextResponse.json(
+    { ok: !anyFailed, fetchedAt, results },
+    { status: anyFailed ? 500 : 200 }
+  );
 }

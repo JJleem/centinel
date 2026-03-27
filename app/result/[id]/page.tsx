@@ -14,8 +14,6 @@ import TrendCard from "@/components/TrendCard";
 import AdCopyCard from "@/components/AdCopyCard";
 import GameCharts from "@/components/GameCharts";
 import RisingInsightsSection from "@/components/RisingInsightsSection";
-import SimilarGamesSection from "@/components/SimilarGamesSection";
-import BreakoutSection from "@/components/BreakoutSection";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { AnalysisResult } from "@/types";
 
@@ -95,16 +93,6 @@ export default function SharedResultPage() {
             {/* Why Popular — above trend insight */}
             {result.risingInsights && result.risingInsights.length > 0 && (
               <RisingInsightsSection insights={result.risingInsights} games={result.games} lang={result.lang} createdAt={result.createdAt} />
-            )}
-
-            {/* Similar games */}
-            {result.similarGames && result.similarGames.length > 0 && (
-              <SimilarGamesSection games={result.similarGames} sourceTitle={result.query} lang={result.lang} />
-            )}
-
-            {/* Breakout candidates */}
-            {result.breakoutCandidates && result.breakoutCandidates.length > 0 && (
-              <BreakoutSection candidates={result.breakoutCandidates} lang={result.lang} />
             )}
 
             <div className="mb-8">

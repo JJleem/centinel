@@ -21,8 +21,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     insight: data.insight,
     adCopies: data.ad_copies,
     risingInsights: data.rising_insights ?? null,
-    similarGames: data.similar_games ?? null,
-    breakoutCandidates: data.breakout_candidates ?? null,
     visionResult: data.vision_result ?? null,
     lang: data.lang,
     createdAt: data.created_at,

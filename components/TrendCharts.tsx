@@ -19,6 +19,7 @@ interface ChartGame {
   icon: string;
   genre: string;
   rankChange?: number;
+  isNewEntry?: boolean;
 }
 
 type SurgeStatus = "no_data" | "insufficient_snapshots" | "no_changes" | null;
@@ -91,7 +92,7 @@ function SurgeEmptyState({ status, latestSnapshotAt }: { status: SurgeStatus; la
 }
 
 export default function TrendCharts() {
-  const [activeTab, setActiveTab] = useState<Tab>("surge");
+  const [activeTab, setActiveTab] = useState<Tab>("global");
   const [games, setGames] = useState<ChartGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -254,7 +255,11 @@ export default function TrendCharts() {
                     <span className="text-[9px] sm:text-[10px] truncate" style={{ color: "#4A6080" }}>
                       {game.score > 0 ? `⭐ ${game.score.toFixed(1)}` : game.developer}
                     </span>
-                    {game.rankChange != null && (
+                    {game.isNewEntry ? (
+                      <span className="text-[9px] font-bold shrink-0 px-1 rounded" style={{ background: "#F0FDF4", color: "#10B981" }}>
+                        🆕 신규
+                      </span>
+                    ) : game.rankChange != null && game.rankChange > 0 && (
                       <span className="text-[9px] font-bold shrink-0" style={{ color: "#10B981" }}>
                         ▲{game.rankChange}
                       </span>
