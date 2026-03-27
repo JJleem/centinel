@@ -58,52 +58,64 @@ export async function GET() {
     return NextResponse.json({ error: "fetch_failed" }, { status: 500 });
   }
 
-  const oldRankMap = new Map(oldSnap.map((g) => [g.app_id, g.rank]));
+  const buildRising = (snap: typeof newSnap, oldSnap: { app_id: string; rank: number }[]) => {
+    const oldRankMap = new Map(oldSnap.map((g) => [g.app_id, g.rank]));
+    return snap
+      .map((g) => {
+        const oldRank = oldRankMap.get(g.app_id);
+        const isNewEntry = oldRank == null;
+        const rankChange = isNewEntry ? 31 - g.rank : oldRank - g.rank;
+        return { ...g, rankChange, isNewEntry };
+      })
+      .filter((g) => g.rankChange > 0)
+      .sort((a, b) => b.rankChange - a.rankChange)
+      .slice(0, 30)
+      .map((g) => ({
+        title: g.title,
+        appId: g.app_id,
+        developer: g.developer,
+        score: g.score ?? 0,
+        icon: g.icon ?? "",
+        genre: g.genre ?? "Game",
+        rankChange: g.rankChange,
+        isNewEntry: g.isNewEntry,
+      }));
+  };
 
-  const rising = newSnap
-    .map((g) => {
-      const oldRank = oldRankMap.get(g.app_id);
-      const isNewEntry = oldRank == null;
-      const rankChange = isNewEntry ? 31 - g.rank : oldRank - g.rank;
-      return { ...g, rankChange, isNewEntry };
-    })
-    .filter((g) => g.rankChange > 0)
-    .sort((a, b) => b.rankChange - a.rankChange)
-    .slice(0, 30)
-    .map((g) => ({
-      title: g.title,
-      appId: g.app_id,
-      developer: g.developer,
-      score: g.score ?? 0,
-      icon: g.icon ?? "",
-      genre: g.genre ?? "Game",
-      rankChange: g.rankChange,
-      isNewEntry: g.isNewEntry,
-    }));
+  let rising = buildRising(newSnap, oldSnap);
+  let comparedAt = previous;
 
-  const noChanges = rising.length === 0;
+  // 변동 없으면 가장 오래된 스냅샷과 비교
+  if (rising.length === 0) {
+    const { data: oldestRow } = await supabase
+      .from("chart_snapshots")
+      .select("fetched_at")
+      .eq("collection", "TOP_FREE")
+      .eq("category", "GAME")
+      .order("fetched_at", { ascending: true })
+      .limit(1)
+      .single();
 
-  // 변동 없을 때도 현재 스냅샷 그대로 표시
-  const games = noChanges
-    ? newSnap
-        .sort((a, b) => a.rank - b.rank)
-        .map((g) => ({
-          title: g.title,
-          appId: g.app_id,
-          developer: g.developer,
-          score: g.score ?? 0,
-          icon: g.icon ?? "",
-          genre: g.genre ?? "Game",
-          rankChange: 0,
-          isNewEntry: false,
-        }))
-    : rising;
+    if (oldestRow && oldestRow.fetched_at !== previous) {
+      const { data: oldestSnap } = await supabase
+        .from("chart_snapshots")
+        .select("app_id, rank")
+        .eq("collection", "TOP_FREE")
+        .eq("category", "GAME")
+        .eq("fetched_at", oldestRow.fetched_at);
+
+      if (oldestSnap) {
+        rising = buildRising(newSnap, oldestSnap);
+        comparedAt = oldestRow.fetched_at;
+      }
+    }
+  }
 
   return NextResponse.json({
-    games,
-    snapshotAge: Math.round((latestDate.getTime() - new Date(previous).getTime()) / 60000),
+    games: rising,
+    snapshotAge: Math.round((latestDate.getTime() - new Date(comparedAt).getTime()) / 60000),
     latestSnapshotAt: latest,
-    previousSnapshotAt: previous,
-    noChanges,
+    previousSnapshotAt: comparedAt,
+    noChanges: rising.length === 0,
   });
 }

@@ -100,7 +100,6 @@ export default function TrendCharts() {
   const [surgeMessage, setSurgeMessage] = useState("");
   const [surgeStatus, setSurgeStatus] = useState<SurgeStatus>(null);
   const [surgeLatestAt, setSurgeLatestAt] = useState<string | null>(null);
-  const [noChanges, setNoChanges] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -109,7 +108,6 @@ export default function TrendCharts() {
     setSurgeMessage("");
     setSurgeStatus(null);
     setSurgeLatestAt(null);
-    setNoChanges(false);
 
     const url = activeTab === "surge" ? "/api/charts/rising" : `/api/charts?tab=${activeTab}`;
 
@@ -129,11 +127,8 @@ export default function TrendCharts() {
               hour: "numeric", minute: "2-digit", hour12: true,
             })
           );
-          if (data.snapshotAge && !data.noChanges) {
+          if (data.snapshotAge) {
             setSurgeMessage(`${data.snapshotAge}분 전 대비 순위 상승`);
-          }
-          if (data.noChanges) {
-            setNoChanges(true);
           }
         } else if (data.message) {
           setSurgeMessage(data.message);
@@ -213,15 +208,7 @@ export default function TrendCharts() {
         </div>
       </div>
 
-      {/* No-changes banner */}
-      {!loading && activeTab === "surge" && noChanges && (
-        <div className="mb-2 px-3 py-2 rounded-[10px] text-xs flex items-center gap-2" style={{ background: "#F8FBFF", border: "1px solid #E8F4FC", color: "#4A6080" }}>
-          <span>📡</span>
-          <span>현재 순위 변동 없음 — 최신 스냅샷 기준 Top 30 표시 중</span>
-        </div>
-      )}
-
-      {/* Game cards */}
+{/* Game cards */}
       <div className="max-h-[420px] overflow-y-auto pr-1 -mr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "#C8E4F4 transparent" }}>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-2.5">
           {loading &&
