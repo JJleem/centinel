@@ -12,7 +12,7 @@ const TABS = [
 
 export async function POST() {
   const fetchedAt = new Date().toISOString();
-  const results: { collection: string; category: string; count: number }[] = [];
+  const results: { collection: string; category: string; count: number; error?: string }[] = [];
 
   for (const tab of TABS) {
     try {
