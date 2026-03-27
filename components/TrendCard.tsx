@@ -66,7 +66,7 @@ export default function TrendCard({ insight, query, usedFallback, games, lang, r
       )}
 
       {/* Game icons + query badge on same row */}
-      <div className="flex items-center mb-5">
+      <div className="flex items-center mb-5 gap-2 flex-wrap">
         {games && games.length > 0 && (
           <>
             <div className="flex items-center">
@@ -74,8 +74,14 @@ export default function TrendCard({ insight, query, usedFallback, games, lang, r
                 <GameIcon key={i} game={game} index={i} />
               ))}
             </div>
-            <span className="ml-3 text-xs text-[#4A6080] shrink-0">+{games.length}개 게임 분석</span>
+            <span className="text-xs text-[#4A6080] shrink-0">+{games.length}개 게임 분석</span>
           </>
+        )}
+        {visionResult && (
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border shrink-0"
+            style={{ background: "#F5F0FF", color: "#6B4EFF", borderColor: "#C4B8FF" }}>
+            📸 Visual Intelligence ({visionResult.analyzedCount}개)
+          </span>
         )}
         <span className="ml-auto text-xs text-[#4A6080] bg-[#EBF5FC] px-2 py-1 rounded-full border border-[#C8E4F4] shrink-0">
           {query}

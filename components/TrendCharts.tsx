@@ -91,7 +91,7 @@ function SurgeEmptyState({ status, latestSnapshotAt }: { status: SurgeStatus; la
 }
 
 export default function TrendCharts() {
-  const [activeTab, setActiveTab] = useState<Tab>("global");
+  const [activeTab, setActiveTab] = useState<Tab>("surge");
   const [games, setGames] = useState<ChartGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);

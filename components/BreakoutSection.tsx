@@ -33,12 +33,12 @@ export default function BreakoutSection({ candidates, lang }: Props) {
         />
         <div>
           <h2 className="text-lg font-bold text-[#0A1929]">
-            {lang === "EN" ? "Breakout Candidates" : "떡상 가능성 게임"}
+            {lang === "EN" ? "Surging on Charts" : "차트 급상승"}
           </h2>
           <p className="text-xs text-[#4A6080] mt-0.5">
             {lang === "EN"
-              ? "Games rapidly climbing the charts right now — not yet in your analysis"
-              : "지금 차트에서 빠르게 순위를 올리고 있는 게임 · 분석에 포함되지 않은 신규 급상승"}
+              ? "Games rapidly climbing Google Play charts right now — not in your current analysis"
+              : "지금 Google Play 차트에서 빠르게 순위를 올리고 있는 게임 · 이번 분석에 포함되지 않은 신규 급상승"}
           </p>
         </div>
       </div>

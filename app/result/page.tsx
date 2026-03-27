@@ -117,7 +117,7 @@ export default function ResultPage() {
             {/* Pipeline stages */}
             <div className="flex items-center gap-2 mb-6 text-xs overflow-x-auto pb-1">
               {[
-                "① 트렌드 분석 (Sonnet)",
+                "① 트렌드 분석 + Visual Intelligence (Sonnet)",
                 "② 인사이트 앙상블 (Haiku ×2)",
                 "③ 광고 소재 앙상블 (Haiku ×2)",
                 "④ 오케스트레이터 선별 (Sonnet)",
@@ -159,7 +159,7 @@ export default function ResultPage() {
                   <p className="text-xs text-[#4A6080] mt-0.5">수집된 게임 전체를 앙상블 분석 · 장르 패턴, 수익 모델, 시장 기회를 도출합니다</p>
                 </div>
               </div>
-              <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} resultId={typeof window !== "undefined" ? localStorage.getItem("centinel_current_id") : null} />
+              <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} resultId={typeof window !== "undefined" ? localStorage.getItem("centinel_current_id") : null} visionResult={result.visionResult} />
             </div>
 
             {/* Ad copies */}

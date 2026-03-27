@@ -28,12 +28,12 @@ export default function SimilarGamesSection({ games, sourceTitle, lang }: Props)
         />
         <div>
           <h2 className="text-lg font-bold text-[#0A1929]">
-            {lang === "EN" ? "Similar Games" : "비슷한 게임"}
+            {lang === "EN" ? "Breakout Candidates" : "떡상 가능성"}
           </h2>
           <p className="text-xs text-[#4A6080] mt-0.5">
             {lang === "EN"
-              ? `Games similar to ${sourceTitle} on Google Play`
-              : `${sourceTitle}와 비슷한 장르·스타일의 게임`}
+              ? `Games similar to ${sourceTitle} — potential next breakout titles`
+              : `${sourceTitle}와 비슷한 장르·스타일의 게임 — 다음 트렌드 후보`}
           </p>
         </div>
       </div>
