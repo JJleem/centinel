@@ -73,7 +73,28 @@ export default function HistoryPage() {
         {loading && (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-28 bg-white border border-[#E8F4FC] rounded-[14px] animate-pulse" />
+              <div key={i} className="bg-white border border-[#E8F4FC] rounded-[14px] p-5 animate-pulse">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-4 w-8 rounded-full bg-[#EBF5FC]" />
+                      <div className="h-4 w-40 rounded bg-[#EBF5FC]" />
+                      <div className="h-4 w-7 rounded-full bg-[#EBF5FC]" />
+                    </div>
+                    <div className="h-3 w-28 rounded bg-[#EBF5FC] mb-3" />
+                    <div className="flex gap-1.5">
+                      <div className="h-5 w-16 rounded-full bg-[#EBF5FC]" />
+                      <div className="h-5 w-20 rounded-full bg-[#EBF5FC]" />
+                      <div className="h-5 w-14 rounded-full bg-[#EBF5FC]" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="h-8 w-9 rounded-[10px] bg-[#EBF5FC]" />
+                    <div className="h-8 w-20 rounded-[10px] bg-[#EBF5FC]" />
+                    <div className="h-8 w-9 rounded-[10px] bg-[#EBF5FC]" />
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
