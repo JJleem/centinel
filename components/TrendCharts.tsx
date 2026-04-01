@@ -128,7 +128,12 @@ export default function TrendCharts() {
             })
           );
           if (data.snapshotAge) {
-            setSurgeMessage(`${data.snapshotAge}분 전 대비 순위 상승`);
+            const mins = data.snapshotAge as number;
+            const label =
+              mins < 60 ? `${mins}분 전` :
+              mins < 1440 ? `${Math.round(mins / 60)}시간 전` :
+              `${Math.round(mins / 1440)}일 전`;
+            setSurgeMessage(`${label} 대비 순위 상승`);
           }
         } else if (data.message) {
           setSurgeMessage(data.message);
