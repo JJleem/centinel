@@ -9,7 +9,7 @@ function GameIcon({ src, alt }: { src: string; alt: string }) {
   return <img src={src} alt={alt} className="w-full h-full object-cover" onError={() => setBroken(true)} />;
 }
 
-type Tab = "rising" | "global" | "casual" | "surge";
+type Tab = "rising" | "global" | "casual" | "surge" | "ios-global" | "ios-grossing";
 
 interface ChartGame {
   title: string;
@@ -18,6 +18,7 @@ interface ChartGame {
   score: number;
   icon: string;
   genre: string;
+  platform?: "google" | "ios";
   rankChange?: number;
   isNewEntry?: boolean;
 }
@@ -25,10 +26,12 @@ interface ChartGame {
 type SurgeStatus = "no_data" | "insufficient_snapshots" | "no_changes" | null;
 
 const TABS: { key: Tab; label: string }[] = [
-  { key: "global", label: "글로벌 탑" },
-  { key: "rising", label: "매출 탑" },
-  { key: "casual", label: "캐주얼 탑" },
-  { key: "surge", label: "급상승" },
+  { key: "global",       label: "글로벌 탑"   },
+  { key: "rising",       label: "매출 탑"     },
+  { key: "casual",       label: "캐주얼 탑"   },
+  { key: "surge",        label: "급상승"      },
+  { key: "ios-global",   label: "🍎 iOS 탑"   },
+  { key: "ios-grossing", label: "🍎 iOS 매출" },
 ];
 
 function formatKST(iso: string) {
@@ -256,6 +259,11 @@ export default function TrendCharts() {
                     <span className="text-[9px] sm:text-[10px] truncate" style={{ color: "#4A6080" }}>
                       {game.score > 0 ? `⭐ ${game.score.toFixed(1)}` : game.developer}
                     </span>
+                    {game.platform === "ios" && (
+                      <span className="text-[9px] font-bold shrink-0 px-1 rounded" style={{ background: "#F5F0FF", color: "#7C3AED" }}>
+                        🍎
+                      </span>
+                    )}
                     {game.isNewEntry ? (
                       <span className="text-[9px] font-bold shrink-0 px-1 rounded" style={{ background: "#F0FDF4", color: "#10B981" }}>
                         🆕 신규

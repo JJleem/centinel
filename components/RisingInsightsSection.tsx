@@ -125,7 +125,14 @@ export default function RisingInsightsSection({ insights, games, lang, createdAt
                     className="text-[11px] font-bold px-2.5 py-1 rounded-full border"
                     style={{ background: colors.bg, color: colors.color, borderColor: colors.border }}
                   >
-                    {heroGame.chartLabel ?? "글로벌탑"} {heroGame.chartRank}위
+                    Google {heroGame.chartLabel ?? "글로벌탑"} {heroGame.chartRank}위
+                  </span>
+                )}
+                {heroGame?.iosChartRank != null && (
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full border" style={{ background: "#F5F0FF", color: "#7C3AED", borderColor: "#DDD6FE" }}>
+                    🍎 {heroGame.iosChartLabel ?? "iOS 글로벌탑"} {heroGame.iosChartRank}위
+                    {(heroGame.iosRankChange ?? 0) > 0 && <span className="ml-1 text-green-600">▲{heroGame.iosRankChange}</span>}
+                    {(heroGame.iosRankChange ?? 0) < 0 && <span className="ml-1 text-red-500">▼{Math.abs(heroGame.iosRankChange!)}</span>}
                   </span>
                 )}
                 {(hero.rankChange ?? 0) > 0 && (
@@ -203,7 +210,14 @@ export default function RisingInsightsSection({ insights, games, lang, createdAt
                       <span className="text-sm font-semibold text-[#0A1929]">{ins.title}</span>
                       {game?.chartRank != null && (
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0" style={{ background: c.bg, color: c.color, borderColor: c.border }}>
-                          {game.chartLabel ?? "글로벌탑"} {game.chartRank}위
+                          Google {game.chartLabel ?? "글로벌탑"} {game.chartRank}위
+                        </span>
+                      )}
+                      {game?.iosChartRank != null && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0" style={{ background: "#F5F0FF", color: "#7C3AED", borderColor: "#DDD6FE" }}>
+                          🍎 {game.iosChartRank}위
+                          {(game.iosRankChange ?? 0) > 0 && <span className="ml-0.5 text-green-600">▲{game.iosRankChange}</span>}
+                          {(game.iosRankChange ?? 0) < 0 && <span className="ml-0.5 text-red-500">▼{Math.abs(game.iosRankChange!)}</span>}
                         </span>
                       )}
                       {isRising && (

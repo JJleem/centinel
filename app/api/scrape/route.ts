@@ -4,11 +4,106 @@ import { supabase } from "@/lib/supabase";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const gplay = require("google-play-scraper").default;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const store = require("app-store-scraper");
 
 function normalizeInstalls(installs: string | number | undefined): string {
   if (!installs) return "N/A";
   if (typeof installs === "number") return `${installs.toLocaleString()}+`;
   return String(installs);
+}
+
+// Normalize title for matching: lowercase, strip special chars
+function normalizeTitle(title: string): string {
+  return title.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+type RawApp = {
+  title?: string; appId?: string; developer?: string; score?: number;
+  installs?: string | number; genre?: string; genreId?: string;
+  summary?: string; description?: string; icon?: string; screenshots?: string[];
+};
+
+type RawIosApp = {
+  title?: string; id?: number; appId?: string; developer?: string; score?: number;
+  primaryGenreId?: number; primaryGenreName?: string;
+  description?: string; icon?: string; screenshots?: string[];
+};
+
+// Fetch iOS search results + chart enrichment from DB
+async function fetchIosData(query: string): Promise<{ iosGames: RawIosApp[]; iosChartMap: Map<string, { rank: number; label: string; rankChange: number }> }> {
+  try {
+    const results: RawIosApp[] = await store.search({ term: query, num: 10, country: "us" });
+    const iosGames = results.filter((a) => a.primaryGenreId === 6014 || (a.primaryGenreName ?? "").toLowerCase().includes("game"));
+
+    // Enrich with iOS chart data from DB
+    const iosBundleIds = iosGames.map((a) => String(a.id ?? "")).filter(Boolean);
+    const iosChartMap = new Map<string, { rank: number; label: string; rankChange: number }>();
+
+    if (iosBundleIds.length > 0) {
+      const IOS_CHARTS = [
+        { label: "iOS 글로벌탑", collection: "iOS 글로벌탑", category: "GAME_IOS" },
+        { label: "iOS 매출탑",   collection: "iOS 매출탑",   category: "GAME_IOS" },
+      ];
+
+      for (const chart of IOS_CHARTS) {
+        const { data: times } = await supabase
+          .from("chart_snapshots")
+          .select("fetched_at")
+          .eq("platform", "ios")
+          .eq("collection", chart.collection)
+          .order("fetched_at", { ascending: false })
+          .limit(200);
+
+        if (!times || times.length === 0) continue;
+
+        const latest = times[0].fetched_at;
+        const latestDate = new Date(latest);
+        const previous = times.find(
+          (t) => new Date(t.fetched_at).getTime() < latestDate.getTime() - 60 * 60 * 1000
+        );
+
+        const { data: newSnap } = await supabase
+          .from("chart_snapshots")
+          .select("app_id, rank")
+          .eq("platform", "ios")
+          .eq("collection", chart.collection)
+          .eq("fetched_at", latest)
+          .in("app_id", iosBundleIds);
+
+        if (!newSnap) continue;
+        const newRankMap = new Map(newSnap.map((r) => [r.app_id, r.rank]));
+
+        let oldRankMap = new Map<string, number>();
+        if (previous) {
+          const { data: oldSnap } = await supabase
+            .from("chart_snapshots")
+            .select("app_id, rank")
+            .eq("platform", "ios")
+            .eq("collection", chart.collection)
+            .eq("fetched_at", previous.fetched_at)
+            .in("app_id", iosBundleIds);
+          if (oldSnap) oldRankMap = new Map(oldSnap.map((r) => [r.app_id, r.rank]));
+        }
+
+        for (const id of iosBundleIds) {
+          const newRank = newRankMap.get(id);
+          if (newRank != null && !iosChartMap.has(id)) {
+            const oldRank = oldRankMap.get(id);
+            iosChartMap.set(id, {
+              rank: newRank,
+              label: chart.label,
+              rankChange: oldRank != null ? oldRank - newRank : (previous ? 10 : 0),
+            });
+          }
+        }
+      }
+    }
+
+    return { iosGames, iosChartMap };
+  } catch {
+    return { iosGames: [], iosChartMap: new Map() };
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -19,15 +114,14 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Search without fullDetail to avoid 404 crashes from individual apps
-    const searchList = await gplay.search({
-      term: query,
-      num: 10,
-      lang: "en",
-      country: "us",
-    });
+    // ── Google Play + iOS search in parallel ──────────────────────────────
+    const [googleSearchResult, iosResult] = await Promise.allSettled([
+      gplay.search({ term: query, num: 10, lang: "en", country: "us" }),
+      fetchIosData(query),
+    ]);
 
-    // Fetch full details per-app in parallel, ignoring individual 404s
+    // ── Google Play processing ────────────────────────────────────────────
+    const searchList = googleSearchResult.status === "fulfilled" ? googleSearchResult.value : [];
     const detailResults = await Promise.allSettled(
       searchList.map((r: { appId: string }) =>
         gplay.app({ appId: r.appId, lang: "en", country: "us" })
@@ -37,8 +131,6 @@ export async function POST(req: NextRequest) {
       .filter((r) => r.status === "fulfilled")
       .map((r) => (r as PromiseFulfilledResult<unknown>).value);
 
-    // If appId provided (from chart click) and still < 3 GAME results,
-    // fetch the app itself + similar games to pad results
     if (appId && rawResults.filter((a) => (a as { genreId?: string }).genreId?.startsWith("GAME")).length < 3) {
       const existingIds = new Set(rawResults.map((a) => (a as { appId?: string }).appId));
       const [appDetail, similar] = await Promise.allSettled([
@@ -61,122 +153,124 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    type RawApp = {
-      title?: string; appId?: string; developer?: string; score?: number;
-      installs?: string | number; genre?: string; genreId?: string;
-      summary?: string; description?: string; icon?: string; screenshots?: string[];
-    };
     const games: GameData[] = (rawResults as RawApp[])
       .filter((app) => app.genreId?.startsWith("GAME"))
       .map((app) => ({
-          title: app.title ?? "Unknown",
-          appId: app.appId ?? "",
-          developer: app.developer ?? "Unknown",
-          score: app.score ?? 0,
-          installs: normalizeInstalls(app.installs),
-          genre: app.genre ?? "Casual",
-          description: app.summary ?? app.description ?? "",
-          icon: app.icon ?? "",
-          screenshots: (app.screenshots ?? []).slice(0, 3),
-        })
-      );
+        title:       app.title ?? "Unknown",
+        appId:       app.appId ?? "",
+        developer:   app.developer ?? "Unknown",
+        score:       app.score ?? 0,
+        installs:    normalizeInstalls(app.installs),
+        genre:       app.genre ?? "Casual",
+        description: app.summary ?? app.description ?? "",
+        icon:        app.icon ?? "",
+        screenshots: (app.screenshots ?? []).slice(0, 3),
+        platform:    "google" as const,
+      }));
 
-    if (games.length >= 3) {
-      // If chart click provided rank directly, apply it to the matched game first
-      if (appId && chartRank != null && chartLabel) {
-        const matched = games.find((g) => g.appId === appId);
-        if (matched) {
-          matched.chartRank = chartRank;
-          matched.chartLabel = chartLabel;
-        }
+    if (games.length < 3) {
+      console.warn(`[scrape] Only ${games.length} results for "${query}"`);
+      return NextResponse.json({ error: "insufficient_results" }, { status: 422 });
+    }
+
+    // ── iOS matching & merge ──────────────────────────────────────────────
+    const { iosGames, iosChartMap } = iosResult.status === "fulfilled"
+      ? iosResult.value
+      : { iosGames: [], iosChartMap: new Map() };
+
+    for (const game of games) {
+      const normalizedGoogle = normalizeTitle(game.title);
+      const matched = iosGames.find((ios) => normalizeTitle(ios.title ?? "") === normalizedGoogle);
+      if (matched) {
+        const iosId = String(matched.id ?? "");
+        const chartInfo = iosChartMap.get(iosId);
+        game.platform       = "both";
+        game.iosBundleId    = iosId;
+        game.iosChartRank   = chartInfo?.rank;
+        game.iosChartLabel  = chartInfo?.label;
+        game.iosRankChange  = chartInfo?.rankChange;
       }
+    }
 
-      // Enrich with chartRank/chartLabel/rankChange from DB (non-critical)
-      try {
-        const appIds = games.map((g) => g.appId);
+    // ── Google chart enrichment from DB (existing logic) ─────────────────
+    if (appId && chartRank != null && chartLabel) {
+      const matched = games.find((g) => g.appId === appId);
+      if (matched) {
+        matched.chartRank  = chartRank;
+        matched.chartLabel = chartLabel;
+      }
+    }
 
-        const CHARTS = [
-          { collection: "TOP_FREE",  category: "GAME",         label: "글로벌탑" },
-          { collection: "GROSSING",  category: "GAME",         label: "매출탑"   },
-          { collection: "TOP_FREE",  category: "GAME_CASUAL",  label: "캐주얼탑" },
-        ];
+    try {
+      const appIds = games.map((g) => g.appId);
+      const CHARTS = [
+        { collection: "TOP_FREE", category: "GAME",        label: "글로벌탑" },
+        { collection: "GROSSING", category: "GAME",        label: "매출탑"   },
+        { collection: "TOP_FREE", category: "GAME_CASUAL", label: "캐주얼탑" },
+      ];
 
-        for (const chart of CHARTS) {
-          // Get two most recent distinct snapshot times for this chart
-          const { data: times, error: timesErr } = await supabase
-            .from("chart_snapshots")
-            .select("fetched_at")
-            .eq("collection", chart.collection)
-            .eq("category", chart.category)
-            .order("fetched_at", { ascending: false })
-            .limit(200);
+      for (const chart of CHARTS) {
+        const { data: times } = await supabase
+          .from("chart_snapshots")
+          .select("fetched_at")
+          .eq("collection", chart.collection)
+          .eq("category", chart.category)
+          .eq("platform", "google")
+          .order("fetched_at", { ascending: false })
+          .limit(200);
 
-          console.log(`[scrape] ${chart.collection}/${chart.category}: times=${times?.length ?? 0}, err=${timesErr?.message ?? "none"}`);
-          if (!times || times.length === 0) continue;
+        if (!times || times.length === 0) continue;
 
-          const latest = times[0].fetched_at;
-          const latestDate = new Date(latest);
-          const previous = times.find(
-            (t) => new Date(t.fetched_at).getTime() < latestDate.getTime() - 60 * 60 * 1000
-          );
+        const latest = times[0].fetched_at;
+        const latestDate = new Date(latest);
+        const previous = times.find(
+          (t) => new Date(t.fetched_at).getTime() < latestDate.getTime() - 60 * 60 * 1000
+        );
 
-          const { data: newSnap } = await supabase
+        const { data: newSnap } = await supabase
+          .from("chart_snapshots")
+          .select("app_id, rank")
+          .eq("collection", chart.collection)
+          .eq("category", chart.category)
+          .eq("platform", "google")
+          .eq("fetched_at", latest)
+          .in("app_id", appIds);
+
+        if (!newSnap) continue;
+        const newRankMap = new Map(newSnap.map((r) => [r.app_id, r.rank]));
+
+        let oldRankMap = new Map<string, number>();
+        if (previous) {
+          const { data: oldSnap } = await supabase
             .from("chart_snapshots")
             .select("app_id, rank")
             .eq("collection", chart.collection)
             .eq("category", chart.category)
-            .eq("fetched_at", latest)
+            .eq("platform", "google")
+            .eq("fetched_at", previous.fetched_at)
             .in("app_id", appIds);
+          if (oldSnap) oldRankMap = new Map(oldSnap.map((r) => [r.app_id, r.rank]));
+        }
 
-          console.log(`[scrape] newSnap for ${chart.label}: ${newSnap?.length ?? "null"} rows`);
-          if (!newSnap) continue;
-          const newRankMap = new Map(newSnap.map((r) => [r.app_id, r.rank]));
-
-          let oldRankMap = new Map<string, number>();
-          if (previous) {
-            const { data: oldSnap } = await supabase
-              .from("chart_snapshots")
-              .select("app_id, rank")
-              .eq("collection", chart.collection)
-              .eq("category", chart.category)
-              .eq("fetched_at", previous.fetched_at)
-              .in("app_id", appIds);
-            if (oldSnap) oldRankMap = new Map(oldSnap.map((r) => [r.app_id, r.rank]));
-          }
-
-          for (const game of games) {
-            const newRank = newRankMap.get(game.appId);
-            if (newRank != null && game.chartRank == null) {
-              // First chart that matches wins (priority: 글로벌탑 > 매출탑 > 캐주얼탑)
-              game.chartRank = newRank;
-              game.chartLabel = chart.label;
-              const oldRank = oldRankMap.get(game.appId);
-              if (oldRank != null) {
-                game.rankChange = oldRank - newRank;
-              } else if (previous) {
-                game.rankChange = 10;
-              }
-            }
+        for (const game of games) {
+          const newRank = newRankMap.get(game.appId);
+          if (newRank != null && game.chartRank == null) {
+            game.chartRank  = newRank;
+            game.chartLabel = chart.label;
+            const oldRank   = oldRankMap.get(game.appId);
+            game.rankChange = oldRank != null ? oldRank - newRank : (previous ? 10 : undefined);
           }
         }
-        console.log("[scrape] chart enrichment done. chartRanks:", games.map(g => `${g.appId}:${g.chartRank ?? "none"}`).join(", "));
-      } catch (e) { console.error("[scrape] chart enrichment failed:", e); }
-
-      const response: ScrapeResponse = { games, source: "scrape", usedFallback: false };
-      return NextResponse.json(response);
+      }
+    } catch (e) {
+      console.error("[scrape] chart enrichment failed:", e);
     }
 
-    console.warn(`[scrape] Only ${games.length} results for "${query}"`);
-    return NextResponse.json(
-      { error: "insufficient_results" },
-      { status: 422 }
-    );
+    const response: ScrapeResponse = { games, source: "scrape", usedFallback: false };
+    return NextResponse.json(response);
   } catch (error: unknown) {
     const err = error as { message?: string; code?: string };
-    console.warn("[scrape] Google Play scraping failed:", err.message, err.code);
-    return NextResponse.json(
-      { error: "insufficient_results" },
-      { status: 422 }
-    );
+    console.warn("[scrape] failed:", err.message, err.code);
+    return NextResponse.json({ error: "insufficient_results" }, { status: 422 });
   }
 }
