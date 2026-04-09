@@ -9,7 +9,7 @@ function GameIcon({ src, alt }: { src: string; alt: string }) {
   return <img src={src} alt={alt} className="w-full h-full object-cover" onError={() => setBroken(true)} />;
 }
 
-type Tab = "rising" | "global" | "casual" | "surge" | "ios-global" | "ios-grossing";
+type Tab = "rising" | "global" | "casual" | "surge" | "ios-global" | "ios-grossing" | "ios-surge";
 
 interface ChartGame {
   title: string;
@@ -30,8 +30,9 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "rising",       label: "매출 탑"     },
   { key: "casual",       label: "캐주얼 탑"   },
   { key: "surge",        label: "급상승"      },
-  { key: "ios-global",   label: "🍎 iOS 탑"   },
-  { key: "ios-grossing", label: "🍎 iOS 매출" },
+  { key: "ios-global",   label: "iOS 탑"      },
+  { key: "ios-grossing", label: "iOS 매출"    },
+  { key: "ios-surge",    label: "iOS 급상승"  },
 ];
 
 function formatKST(iso: string) {
@@ -112,13 +113,10 @@ export default function TrendCharts() {
     setSurgeStatus(null);
     setSurgeLatestAt(null);
 
-    const isIos = activeTab === "ios-global" || activeTab === "ios-grossing";
-    const isSurge = activeTab === "surge";
-    const url = isSurge
-      ? "/api/charts/rising?platform=google"
-      : isIos
-        ? `/api/charts?tab=${activeTab}`
-        : `/api/charts?tab=${activeTab}`;
+    const url =
+      activeTab === "surge"     ? "/api/charts/rising?platform=google" :
+      activeTab === "ios-surge" ? "/api/charts/rising?platform=ios" :
+      `/api/charts?tab=${activeTab}`;
 
     fetch(url)
       .then((r) => r.json())
@@ -191,7 +189,7 @@ export default function TrendCharts() {
               {fetchedAt} 기준
             </span>
           )}
-          {surgeMessage && activeTab === "surge" && (
+          {surgeMessage && (activeTab === "surge" || activeTab === "ios-surge") && (
             <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: "#F0FDF4", color: "#10B981" }}>
               ▲ {surgeMessage}
             </span>
