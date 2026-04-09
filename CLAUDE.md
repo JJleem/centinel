@@ -1,8 +1,8 @@
 @AGENTS.md
-
-# AI Pipeline (app/api/analyze/route.ts)
-All Claude API logic lives in a single file. Read only this file for prompt changes.
-
-## Token rules (enforced decisions — do not revert)
-- Never use JSON.stringify(arr, null, 2) in prompt construction — plain or field-extract only
-- Agent 3A/3B system prompts share identical blocks — extract to const before adding more
+AI: app/api/analyze/route.ts (all Claude logic)
+Types: types/index.ts · DB: lib/supabase.ts
+Rule: no JSON.stringify(arr,null,2) in prompts
+Prompt: route.ts only
+UI: app/page.tsx · app/result/ · app/history/ · components/
+DB: app/api/charts/ · app/api/history/ · app/api/cron/
+No tests in this project
