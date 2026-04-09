@@ -199,12 +199,13 @@ export default function TrendCharts() {
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-col gap-1 self-start sm:self-auto">
+          {/* Google Play 탭 */}
           <div
             className="flex items-center gap-0.5 rounded-[10px] p-0.5 border"
             style={{ background: "#F8FBFF", borderColor: "#E8F4FC" }}
           >
-            {TABS.map((tab) => (
+            {TABS.filter((t) => !t.key.startsWith("ios")).map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
@@ -213,6 +214,26 @@ export default function TrendCharts() {
                   activeTab === tab.key
                     ? { background: "linear-gradient(135deg, #0B7FD4, #6B4EFF)", color: "white" }
                     : { color: "#4A6080" }
+                }
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          {/* iOS 탭 */}
+          <div
+            className="flex items-center gap-0.5 rounded-[10px] p-0.5 border"
+            style={{ background: "#FBF8FF", borderColor: "#EDE8FF" }}
+          >
+            {TABS.filter((t) => t.key.startsWith("ios")).map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className="px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-[8px] transition-all duration-200 whitespace-nowrap"
+                style={
+                  activeTab === tab.key
+                    ? { background: "linear-gradient(135deg, #7C3AED, #A855F7)", color: "white" }
+                    : { color: "#7C3AED" }
                 }
               >
                 {tab.label}
