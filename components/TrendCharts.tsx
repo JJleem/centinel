@@ -112,7 +112,13 @@ export default function TrendCharts() {
     setSurgeStatus(null);
     setSurgeLatestAt(null);
 
-    const url = activeTab === "surge" ? "/api/charts/rising" : `/api/charts?tab=${activeTab}`;
+    const isIos = activeTab === "ios-global" || activeTab === "ios-grossing";
+    const isSurge = activeTab === "surge";
+    const url = isSurge
+      ? "/api/charts/rising?platform=google"
+      : isIos
+        ? `/api/charts?tab=${activeTab}`
+        : `/api/charts?tab=${activeTab}`;
 
     fetch(url)
       .then((r) => r.json())
