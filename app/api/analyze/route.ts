@@ -15,6 +15,7 @@ type ImageMediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SONNET = "claude-sonnet-4-20250514";
 const HAIKU = "claude-haiku-4-5-20251001";
+const TONE_NAMES = ["Excitement", "Challenge", "Curiosity", "FOMO", "Simplicity", "Empathy"] as const;
 
 // Robust JSON parser: cleans up common Claude output issues before giving up
 function parseJSON<T>(text: string, stage: string): T {
@@ -249,40 +250,41 @@ Make each of the 6 copies distinct in tone: 1) Excitement, 2) Challenge, 3) Curi
 }
 
 // ── Orchestrator: Select best ad copies from ensemble (Sonnet) ────────────
+// Slim-select pattern: send only hook+ctr per copy → get 6 indices → map to full copies
+// Saves ~2,800 tokens vs JSON.stringify(allCopies, null, 2) (3,400 → 600 tokens input)
 async function synthesizeAdCopies(
   copiesA: AdCopy[],
   copiesB: AdCopy[],
   query: string,
   lang: string
 ): Promise<AdCopy[]> {
-  const allCopies = [...copiesA, ...copiesB];
+  const allCopies = [...copiesA, ...copiesB]; // indices 0–5: Perf, 6–11: Brand
+
+  const slim = allCopies.map((c, i) => ({
+    i,
+    variant: i < 6 ? "Perf" : "Brand",
+    tone: TONE_NAMES[i % 6],
+    hook: c.hook,
+    ctr: c.expectedCTR,
+  }));
+
   const message = await client.messages.create({
     model: SONNET,
-    max_tokens: 4000,
-    system: "Senior mobile game UA strategist. Select the best 6 ad copies from 12 — one per tone. Minimal refinement only. Output raw JSON only — no markdown, no explanation.",
+    max_tokens: 80,
+    system: "Mobile game UA strategist. Pick the best ad copy per tone. Output raw JSON only.",
     messages: [{
       role: "user",
-      content: `From these 12 ad copies for "${query}", select and refine the best 6 (one per tone: Excitement, Challenge, Curiosity, FOMO, Simplicity, Empathy/Storytelling):\n\n${JSON.stringify(allCopies, null, 2)}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
-{
-  "adCopies": [
-    {
-      "hook": "...",
-      "mainCopy": "...",
-      "shortFormScript": "...",
-      "appStoreDescription": "...",
-      "targetKeywords": ["keyword1", "keyword2", "keyword3"],
-      "imagePrompt": "Keep or refine the imagePrompt from the selected copy (must remain in English)",
-      "psychologicalTags": ["keep tags from selected copy"],
-      "expectedCTR": 7.5
-    }
-  ]
-}`,
+      content: `12 ad copies for "${query}" — pick 1 winner per tone (Perf vs Brand):\n${JSON.stringify(slim)}\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond: {"selected":[i_Excitement,i_Challenge,i_Curiosity,i_FOMO,i_Simplicity,i_Empathy]}`,
     }],
   });
 
   const text = message.content[0].type === "text" ? message.content[0].text : "";
-  const parsed = parseJSON<{ adCopies: AdCopy[] }>(text, "Orchestrator: Ad Copy Synthesis");
-  return parsed.adCopies;
+  const { selected } = parseJSON<{ selected: number[] }>(text, "Orchestrator: Ad Copy Synthesis");
+
+  return TONE_NAMES.map((_, t) => {
+    const idx = selected[t];
+    return (idx >= 0 && idx < allCopies.length) ? allCopies[idx] : allCopies[t];
+  });
 }
 
 // ── Agent V: Vision Analysis (Sonnet, parallel with trend analysis) ────────
@@ -449,8 +451,9 @@ export async function POST(req: NextRequest) {
         send({ event: "analysis_done", message: "트렌드 분석 완료 (Sonnet)" });
 
         // Build vision context string to enrich downstream prompts
+        // Abbreviated to key phrases only — saves ~140 tokens × 4 agents vs full sentences
         const visionContext = visionResult
-          ? `\n\nVisual Intelligence (Claude Vision — ${visionResult.analyzedCount} screenshots):\n- Core Interaction: ${visionResult.coreInteraction}\n- Visual Hook: ${visionResult.visualHook}\n- Color Palette: ${visionResult.colorPalette}\n- UI Complexity: ${visionResult.uiComplexity}/5\n- Key Visual Elements: ${visionResult.keyVisualElements.join(", ")}`
+          ? `\n\nVision(${visionResult.analyzedCount} screens): interaction=${visionResult.coreInteraction.split(".")[0]}; hook=${visionResult.visualHook.split(".")[0]}; colors=${visionResult.colorPalette.split(",").slice(0, 2).join(",")}; ui=${visionResult.uiComplexity}/5; elements=${visionResult.keyVisualElements.slice(0, 3).join(", ")}`
           : undefined;
 
         // ── Stage 2: Insight Ensemble (2x Haiku, parallel) ────────────
