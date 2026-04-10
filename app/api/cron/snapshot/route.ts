@@ -13,8 +13,9 @@ const GOOGLE_TABS = [
 ];
 
 const IOS_TABS = [
-  { collection: store.collection.TOP_FREE_IOS,     category: store.category.GAMES, label: "iOS 글로벌탑" },
-  { collection: store.collection.TOP_GROSSING_IOS, category: store.category.GAMES, label: "iOS 매출탑"   },
+  { collection: store.collection.TOP_FREE_IOS,     category: store.category.GAMES,        label: "iOS 글로벌탑" },
+  { collection: store.collection.TOP_GROSSING_IOS, category: store.category.GAMES,        label: "iOS 매출탑"   },
+  { collection: store.collection.TOP_FREE_IOS,     category: store.category.GAMES_ARCADE, label: "iOS 캐주얼탑" },
 ];
 
 export async function GET(req: NextRequest) {

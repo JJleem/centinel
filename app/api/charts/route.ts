@@ -15,8 +15,9 @@ const GOOGLE_TAB_CONFIG: Record<string, { collection: string; category: string }
 };
 
 const IOS_TAB_CONFIG: Record<string, { collection: string; category: number; label: string }> = {
-  "ios-global":   { collection: store.collection.TOP_FREE_IOS,     category: store.category.GAMES, label: "iOS 글로벌탑" },
-  "ios-grossing": { collection: store.collection.TOP_GROSSING_IOS, category: store.category.GAMES, label: "iOS 매출탑"   },
+  "ios-global":   { collection: store.collection.TOP_FREE_IOS,     category: store.category.GAMES,       label: "iOS 글로벌탑" },
+  "ios-grossing": { collection: store.collection.TOP_GROSSING_IOS, category: store.category.GAMES,       label: "iOS 매출탑"   },
+  "ios-casual":   { collection: store.collection.TOP_FREE_IOS,     category: store.category.GAMES_ARCADE, label: "iOS 캐주얼탑" },
 };
 
 export interface ChartGame {

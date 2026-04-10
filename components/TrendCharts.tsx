@@ -9,7 +9,10 @@ function GameIcon({ src, alt }: { src: string; alt: string }) {
   return <img src={src} alt={alt} className="w-full h-full object-cover" onError={() => setBroken(true)} />;
 }
 
-type Tab = "rising" | "global" | "casual" | "surge" | "ios-global" | "ios-grossing" | "ios-surge";
+type Platform = "google" | "ios";
+type TabKey = "global" | "rising" | "casual" | "surge";
+// legacy — kept for type compat with url mapping
+type Tab = TabKey;
 
 interface ChartGame {
   title: string;
@@ -25,15 +28,27 @@ interface ChartGame {
 
 type SurgeStatus = "no_data" | "insufficient_snapshots" | "no_changes" | null;
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: "global",       label: "글로벌 탑"   },
-  { key: "rising",       label: "매출 탑"     },
-  { key: "casual",       label: "캐주얼 탑"   },
-  { key: "surge",        label: "급상승"      },
-  { key: "ios-global",   label: "iOS 탑"      },
-  { key: "ios-grossing", label: "iOS 매출"    },
-  { key: "ios-surge",    label: "iOS 급상승"  },
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "global",  label: "글로벌탑" },
+  { key: "rising",  label: "매출탑"   },
+  { key: "casual",  label: "캐주얼탑" },
+  { key: "surge",   label: "급상승"   },
 ];
+
+const TAB_URL: Record<Platform, Record<TabKey, string>> = {
+  google: {
+    global: "/api/charts?tab=global",
+    rising: "/api/charts?tab=rising",
+    casual: "/api/charts?tab=casual",
+    surge:  "/api/charts/rising?platform=google",
+  },
+  ios: {
+    global: "/api/charts?tab=ios-global",
+    rising: "/api/charts?tab=ios-grossing",
+    casual: "/api/charts?tab=ios-casual",
+    surge:  "/api/charts/rising?platform=ios",
+  },
+};
 
 function formatKST(iso: string) {
   return new Date(iso).toLocaleString("ko-KR", {
@@ -96,7 +111,8 @@ function SurgeEmptyState({ status, latestSnapshotAt }: { status: SurgeStatus; la
 }
 
 export default function TrendCharts() {
-  const [activeTab, setActiveTab] = useState<Tab>("global");
+  const [platform, setPlatform] = useState<Platform>("google");
+  const [activeTab, setActiveTab] = useState<TabKey>("global");
   const [games, setGames] = useState<ChartGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -113,10 +129,7 @@ export default function TrendCharts() {
     setSurgeStatus(null);
     setSurgeLatestAt(null);
 
-    const url =
-      activeTab === "surge"     ? "/api/charts/rising?platform=google" :
-      activeTab === "ios-surge" ? "/api/charts/rising?platform=ios" :
-      `/api/charts?tab=${activeTab}`;
+    const url = TAB_URL[platform][activeTab];
 
     fetch(url)
       .then((r) => r.json())
@@ -156,7 +169,7 @@ export default function TrendCharts() {
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [activeTab]);
+  }, [activeTab, platform]);
 
   const handleSelect = (game: ChartGame, rank: number) => {
     const tabConfig = TABS.find((t) => t.key === activeTab);
@@ -194,50 +207,54 @@ export default function TrendCharts() {
               {fetchedAt} 기준
             </span>
           )}
-          {surgeMessage && (activeTab === "surge" || activeTab === "ios-surge") && (
+          {surgeMessage && activeTab === "surge" && (
             <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: "#F0FDF4", color: "#10B981" }}>
               ▲ {surgeMessage}
             </span>
           )}
         </div>
 
-        {/* Tabs */}
+        {/* Platform switcher + Tabs */}
         <div className="flex flex-col gap-1 self-start sm:self-auto">
-          {/* Google Play 탭 */}
+          {/* Platform switcher */}
+          <div
+            className="flex items-center gap-0.5 rounded-[10px] p-0.5 border self-start"
+            style={{ background: "#F0F4FA", borderColor: "#D8E8F4" }}
+          >
+            <button
+              onClick={() => setPlatform("google")}
+              className="px-3 py-1 text-xs font-semibold rounded-[8px] transition-all duration-200 whitespace-nowrap"
+              style={platform === "google"
+                ? { background: "linear-gradient(135deg, #0B7FD4, #6B4EFF)", color: "white" }
+                : { color: "#4A6080" }}
+            >
+              🤖 Android
+            </button>
+            <button
+              onClick={() => setPlatform("ios")}
+              className="px-3 py-1 text-xs font-semibold rounded-[8px] transition-all duration-200 whitespace-nowrap"
+              style={platform === "ios"
+                ? { background: "linear-gradient(135deg, #7C3AED, #A855F7)", color: "white" }
+                : { color: "#4A6080" }}
+            >
+              🍎 iOS
+            </button>
+          </div>
+          {/* 공통 4탭 */}
           <div
             className="flex items-center gap-0.5 rounded-[10px] p-0.5 border"
             style={{ background: "#F8FBFF", borderColor: "#E8F4FC" }}
           >
-            {TABS.filter((t) => !t.key.startsWith("ios")).map((tab) => (
+            {TABS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className="px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-[8px] transition-all duration-200 whitespace-nowrap"
-                style={
-                  activeTab === tab.key
-                    ? { background: "linear-gradient(135deg, #0B7FD4, #6B4EFF)", color: "white" }
-                    : { color: "#4A6080" }
-                }
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          {/* iOS 탭 */}
-          <div
-            className="flex items-center gap-0.5 rounded-[10px] p-0.5 border"
-            style={{ background: "#FBF8FF", borderColor: "#EDE8FF" }}
-          >
-            {TABS.filter((t) => t.key.startsWith("ios")).map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className="px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-[8px] transition-all duration-200 whitespace-nowrap"
-                style={
-                  activeTab === tab.key
+                style={activeTab === tab.key
+                  ? platform === "ios"
                     ? { background: "linear-gradient(135deg, #7C3AED, #A855F7)", color: "white" }
-                    : { color: "#7C3AED" }
-                }
+                    : { background: "linear-gradient(135deg, #0B7FD4, #6B4EFF)", color: "white" }
+                  : { color: "#4A6080" }}
               >
                 {tab.label}
               </button>
@@ -254,7 +271,7 @@ export default function TrendCharts() {
               <div key={i} className="h-[68px] sm:h-[72px] rounded-[12px] animate-pulse" style={{ background: "#EBF5FC" }} />
             ))}
 
-          {!loading && (activeTab === "surge" || activeTab === "ios-surge") && surgeStatus && (
+          {!loading && activeTab === "surge" && surgeStatus && (
             <SurgeEmptyState status={surgeStatus} latestSnapshotAt={surgeLatestAt} />
           )}
 

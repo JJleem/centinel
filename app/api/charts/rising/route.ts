@@ -5,7 +5,7 @@ type Platform = "google" | "ios";
 
 const PLATFORM_CONFIG: Record<Platform, { collection: string; category: string }> = {
   google: { collection: "TOP_FREE",    category: "GAME"     },
-  ios:    { collection: "iOS 글로벌탑", category: "GAME_IOS" },
+  ios:    { collection: "iOS 글로벌탑", category: "GAME_IOS" },  // iOS 글로벌탑 기준으로 급상승 계산
 };
 
 function buildRising(
