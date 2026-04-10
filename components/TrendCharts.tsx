@@ -127,20 +127,25 @@ export default function TrendCharts() {
           setSurgeStatus("insufficient_snapshots");
           setSurgeLatestAt(data.latestSnapshotAt ?? null);
         } else if (data.games) {
-          setGames(data.games);
-          setFetchedAt(
-            new Date().toLocaleString("ko-KR", {
-              year: "numeric", month: "long", day: "numeric",
-              hour: "numeric", minute: "2-digit", hour12: true,
-            })
-          );
-          if (data.snapshotAge) {
-            const mins = data.snapshotAge as number;
-            const label =
-              mins < 60 ? `${mins}분 전` :
-              mins < 1440 ? `${Math.round(mins / 60)}시간 전` :
-              `${Math.round(mins / 1440)}일 전`;
-            setSurgeMessage(`${label} 대비 순위 상승`);
+          if (data.noChanges) {
+            setSurgeStatus("no_changes");
+            setSurgeLatestAt(data.latestSnapshotAt ?? null);
+          } else {
+            setGames(data.games);
+            setFetchedAt(
+              new Date().toLocaleString("ko-KR", {
+                year: "numeric", month: "long", day: "numeric",
+                hour: "numeric", minute: "2-digit", hour12: true,
+              })
+            );
+            if (data.snapshotAge) {
+              const mins = data.snapshotAge as number;
+              const label =
+                mins < 60 ? `${mins}분 전` :
+                mins < 1440 ? `${Math.round(mins / 60)}시간 전` :
+                `${Math.round(mins / 1440)}일 전`;
+              setSurgeMessage(`${label} 대비 순위 상승`);
+            }
           }
         } else if (data.message) {
           setSurgeMessage(data.message);
@@ -249,7 +254,7 @@ export default function TrendCharts() {
               <div key={i} className="h-[68px] sm:h-[72px] rounded-[12px] animate-pulse" style={{ background: "#EBF5FC" }} />
             ))}
 
-          {!loading && activeTab === "surge" && surgeStatus && (
+          {!loading && (activeTab === "surge" || activeTab === "ios-surge") && surgeStatus && (
             <SurgeEmptyState status={surgeStatus} latestSnapshotAt={surgeLatestAt} />
           )}
 
