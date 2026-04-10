@@ -304,11 +304,16 @@ export default function TrendCharts() {
                   </div>
                   <div className="flex items-center gap-1 mt-0.5">
                     <span className="text-[9px] sm:text-[10px] truncate" style={{ color: "#4A6080" }}>
-                      {game.score > 0 ? `⭐ ${game.score.toFixed(1)}` : game.developer}
+                      {game.score > 0 ? `⭐ ${game.score.toFixed(1)}` : "⭐ -"}
                     </span>
                     {game.platform === "ios" && (
                       <span className="text-[9px] font-bold shrink-0 px-1 rounded" style={{ background: "#F5F0FF", color: "#7C3AED" }}>
                         🍎
+                      </span>
+                    )}
+                    {(game.platform === "google" || !game.platform) && (
+                      <span className="text-[9px] font-bold shrink-0 px-1 rounded" style={{ background: "#EBF5FC", color: "#0B7FD4" }}>
+                        🤖
                       </span>
                     )}
                     {game.isNewEntry ? (
