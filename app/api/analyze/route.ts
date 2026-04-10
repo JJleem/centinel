@@ -289,10 +289,25 @@ async function synthesizeAdCopies(
 // ── Agent V: Vision Analysis (Sonnet, parallel with trend analysis) ────────
 async function analyzeVision(games: GameData[], lang: string): Promise<VisionResult | null> {
   const imageJobs = games
-    .map((g) => ({ title: g.title, url: g.screenshots?.[0] ?? null }))
-    .filter((j): j is { title: string; url: string } => j.url !== null);
+    .map((g) => ({ appId: g.appId, title: g.title, url: g.screenshots?.[0] ?? null }))
+    .filter((j): j is { appId: string; title: string; url: string } => j.url !== null);
 
   if (imageJobs.length < 3) return null;
+
+  // ── Cache check — key: sorted "appId:url" pairs ───────────────────────
+  const { supabase } = await import("@/lib/supabase");
+  const cacheKey = imageJobs.map((j) => `${j.appId}:${j.url}`).sort().join("|");
+  const { data: cached } = await supabase
+    .from("vision_cache")
+    .select("result, analyzed_count")
+    .eq("cache_key", cacheKey)
+    .single();
+
+  if (cached) {
+    console.log("[AgentV] cache HIT");
+    return { ...(cached.result as Omit<VisionResult, "analyzedCount">), analyzedCount: cached.analyzed_count };
+  }
+  console.log("[AgentV] cache MISS — running vision analysis");
 
   const fetchResults = await Promise.allSettled(
     imageJobs.map(async (job) => {
@@ -361,6 +376,16 @@ Output raw JSON only — no markdown, no code blocks:
 
   const text = message.content[0].type === "text" ? message.content[0].text : "";
   const parsed = parseJSON<Omit<VisionResult, "analyzedCount">>(text, "Agent V: Vision Analysis");
+
+  // ── Save to cache (fire-and-forget) ──────────────────────────────────
+  supabase.from("vision_cache").upsert({
+    cache_key: cacheKey,
+    result: parsed,
+    analyzed_count: fetched.length,
+  }).then(({ error }) => {
+    if (error) console.error("[AgentV] cache save failed:", error.message);
+  });
+
   return { ...parsed, analyzedCount: fetched.length };
 }
 
