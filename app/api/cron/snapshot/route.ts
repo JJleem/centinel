@@ -72,20 +72,30 @@ export async function GET(req: NextRequest) {
         country:    "us",
       });
 
-      const rows = games.map((app: { title?: string; id?: number; appId?: string; developer?: string; score?: number; icon?: string; primaryGenreName?: string }, i: number) => ({
-        app_id:     String(app.id ?? app.appId ?? ""),
-        bundle_id:  String(app.id ?? app.appId ?? ""),
-        title:      app.title ?? "Unknown",
-        developer:  app.developer ?? "Unknown",
-        rank:       i + 1,
-        collection: tab.label,
-        category:   "GAME_IOS",
-        score:      app.score ?? 0,
-        icon:       app.icon ?? "",
-        genre:      app.primaryGenreName ?? "Game",
-        platform:   "ios",
-        fetched_at: fetchedAt,
-      }));
+      type IosListItem = { title?: string; id?: number; appId?: string; developer?: string; icon?: string; primaryGenreName?: string };
+      type IosAppDetail = { score?: number };
+      const scoreResults = await Promise.allSettled(
+        games.map((app: IosListItem) => store.app({ id: app.id, country: "us" }))
+      );
+
+      const rows = games.map((app: IosListItem, i: number) => {
+        const detail = scoreResults[i];
+        const score = detail.status === "fulfilled" ? ((detail.value as IosAppDetail).score ?? 0) : 0;
+        return {
+          app_id:     String(app.id ?? app.appId ?? ""),
+          bundle_id:  String(app.id ?? app.appId ?? ""),
+          title:      app.title ?? "Unknown",
+          developer:  app.developer ?? "Unknown",
+          rank:       i + 1,
+          collection: tab.label,
+          category:   "GAME_IOS",
+          score,
+          icon:       app.icon ?? "",
+          genre:      app.primaryGenreName ?? "Game",
+          platform:   "ios",
+          fetched_at: fetchedAt,
+        };
+      });
 
       const { error } = await supabase.from("chart_snapshots").insert(rows);
       if (error) throw new Error(error.message);

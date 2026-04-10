@@ -45,13 +45,25 @@ export async function GET(req: NextRequest) {
         country:    "us",
       });
 
-      const games: ChartGame[] = results.map((app: {
-        title?: string; id?: number; developer?: string; score?: number; icon?: string; primaryGenreName?: string;
-      }) => ({
+      // list() doesn't include score — fetch app details in parallel to get ratings
+      type ListItem = { title?: string; id?: number; developer?: string; icon?: string; primaryGenreName?: string };
+      type AppDetail = { score?: number };
+      const scoreResults = await Promise.allSettled(
+        results.map((app: ListItem) => store.app({ id: app.id, country: "us" }))
+      );
+      const scoreMap = new Map<number, number>(
+        results.map((app: ListItem, i: number) => {
+          const detail = scoreResults[i];
+          const score = detail.status === "fulfilled" ? ((detail.value as AppDetail).score ?? 0) : 0;
+          return [app.id ?? 0, score];
+        })
+      );
+
+      const games: ChartGame[] = results.map((app: ListItem) => ({
         title:     app.title ?? "Unknown",
         appId:     String(app.id ?? ""),
         developer: app.developer ?? "Unknown",
-        score:     app.score ?? 0,
+        score:     scoreMap.get(app.id ?? 0) ?? 0,
         icon:      app.icon ?? "",
         genre:     app.primaryGenreName ?? "Game",
         platform:  "ios" as const,
