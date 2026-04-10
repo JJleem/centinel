@@ -174,7 +174,8 @@ async function generateAdCopiesPerformance(
   insight: InsightSummary,
   query: string,
   lang: string,
-  visionContext?: string
+  visionContext?: string,
+  preferenceContext?: string
 ): Promise<AdCopy[]> {
   const message = await client.messages.create({
     model: HAIKU,
@@ -182,7 +183,7 @@ async function generateAdCopiesPerformance(
     system: `Mobile game UA copywriter specializing in performance marketing. Create high-CTR, conversion-optimized ad creatives with strong calls-to-action. Output raw JSON only — no markdown, no code blocks, no explanation.\n${AD_COPY_SYSTEM_COMMON}`,
     messages: [{
       role: "user",
-      content: `Create 6 distinct performance-focused ad copies for a hyper-casual game in the "${query}" space.\n\nMarket Insights:\n${insight.summary.join("\n")}\nTop Keywords: ${insight.topKeywords.join(", ")}${visionContext ?? ""}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
+      content: `Create 6 distinct performance-focused ad copies for a hyper-casual game in the "${query}" space.\n\nMarket Insights:\n${insight.summary.join("\n")}\nTop Keywords: ${insight.topKeywords.join(", ")}${visionContext ?? ""}${preferenceContext ?? ""}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
 {
   "adCopies": [
     {
@@ -212,7 +213,8 @@ async function generateAdCopiesBrand(
   insight: InsightSummary,
   query: string,
   lang: string,
-  visionContext?: string
+  visionContext?: string,
+  preferenceContext?: string
 ): Promise<AdCopy[]> {
   const message = await client.messages.create({
     model: HAIKU,
@@ -220,7 +222,7 @@ async function generateAdCopiesBrand(
     system: `Mobile game UA copywriter specializing in brand storytelling. Create emotionally resonant, memorable ad creatives that build long-term player affinity. Output raw JSON only — no markdown, no code blocks, no explanation.\n${AD_COPY_SYSTEM_COMMON}`,
     messages: [{
       role: "user",
-      content: `Create 6 distinct brand-focused ad copies for a hyper-casual game in the "${query}" space.\n\nMarket Insights:\n${insight.summary.join("\n")}\nTop Keywords: ${insight.topKeywords.join(", ")}${visionContext ?? ""}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
+      content: `Create 6 distinct brand-focused ad copies for a hyper-casual game in the "${query}" space.\n\nMarket Insights:\n${insight.summary.join("\n")}\nTop Keywords: ${insight.topKeywords.join(", ")}${visionContext ?? ""}${preferenceContext ?? ""}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond with JSON in this exact format:
 {
   "adCopies": [
     {
@@ -471,10 +473,36 @@ export async function POST(req: NextRequest) {
         // ── Orchestrator: Synthesize best insight (Sonnet) ─────────────
         const insight = await synthesizeInsight(insightA, insightB, lang);
 
+        // ── Stage 3 prep: fetch tone preference history for this genre ──
+        const topGenre = (games as GameData[])[0]?.genre ?? "";
+        let preferenceContext: string | undefined;
+        if (topGenre) {
+          try {
+            const { data: prefRows } = await import("@/lib/supabase").then(({ supabase }) =>
+              supabase
+                .from("copy_preferences")
+                .select("preferred_tone")
+                .ilike("genre", `%${topGenre}%`)
+                .order("created_at", { ascending: false })
+                .limit(50)
+            );
+            if (prefRows && prefRows.length >= 3) {
+              const counts: Record<string, number> = {};
+              for (const r of prefRows) counts[r.preferred_tone] = (counts[r.preferred_tone] ?? 0) + 1;
+              const summary = Object.entries(counts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3)
+                .map(([tone, count]) => `${tone}(${count})`)
+                .join(", ");
+              preferenceContext = `\n\nUser preference history for ${topGenre} genre: ${summary}. Reflect this in CTR scoring and copy tone emphasis.`;
+            }
+          } catch { /* non-critical */ }
+        }
+
         // ── Stage 3: Ad Copy Ensemble (2x Haiku, parallel) ────────────
         const [copiesA, copiesB] = await Promise.all([
-          generateAdCopiesPerformance(insight, query, lang, visionContext),
-          generateAdCopiesBrand(insight, query, lang, visionContext),
+          generateAdCopiesPerformance(insight, query, lang, visionContext, preferenceContext),
+          generateAdCopiesBrand(insight, query, lang, visionContext, preferenceContext),
         ]);
         send({ event: "copies_ensemble_done", message: "광고 소재 앙상블 완료 (Haiku ×2)" });
 

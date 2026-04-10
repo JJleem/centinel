@@ -25,6 +25,10 @@ const SECTION_LABEL_COLOR: Record<string, string> = {
 interface Props {
   adCopy: AdCopy;
   index: number;
+  query?: string;
+  genre?: string;
+  liked?: boolean;
+  onLike?: (index: number) => void;
 }
 
 function CopyButton({ text, label }: { text: string; label: string }) {
@@ -84,7 +88,9 @@ function CTRBar({ score }: { score: number }) {
   );
 }
 
-export default function AdCopyCard({ adCopy, index }: Props) {
+const TONE_NAMES = ["Excitement", "Challenge", "Curiosity", "FOMO", "Simplicity", "Empathy"];
+
+export default function AdCopyCard({ adCopy, index, query, genre, liked, onLike }: Props) {
   const [allCopied, setAllCopied] = useState(false);
   const tone = index % 6;
   const toneColor = TONE_COLORS[tone];
@@ -120,13 +126,27 @@ export default function AdCopyCard({ adCopy, index }: Props) {
             </span>
           ))}
         </div>
-        <button
-          onClick={handleCopyAll}
-          className="no-print text-xs px-3 py-1 rounded-[8px] border transition-colors hover:opacity-80 shrink-0"
-          style={{ background: "#EBF5FC", borderColor: "#C8E4F4", color: "#0B7FD4" }}
-        >
-          {allCopied ? "✓ 전체 복사됨" : "전체 복사"}
-        </button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onLike && (
+            <button
+              onClick={() => onLike(index)}
+              className="no-print text-xs px-2.5 py-1 rounded-[8px] border transition-all duration-200 hover:opacity-80"
+              style={liked
+                ? { background: "#FFF0F6", borderColor: "#FFB3D1", color: "#E91E8C", fontWeight: 700 }
+                : { background: "#F8FBFF", borderColor: "#E8F4FC", color: "#94A3B8" }}
+              title="이 광고 소재가 마음에 들어요"
+            >
+              {liked ? "👍 선택됨" : "👍"}
+            </button>
+          )}
+          <button
+            onClick={handleCopyAll}
+            className="no-print text-xs px-3 py-1 rounded-[8px] border transition-colors hover:opacity-80"
+            style={{ background: "#EBF5FC", borderColor: "#C8E4F4", color: "#0B7FD4" }}
+          >
+            {allCopied ? "✓ 전체 복사됨" : "전체 복사"}
+          </button>
+        </div>
       </div>
 
       <div className="p-5 flex flex-col gap-4 flex-1">

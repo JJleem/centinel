@@ -34,11 +34,34 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 export default function ResultPage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const [likedIndex, setLikedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const current = localStorage.getItem("centinel_current");
     if (current) setResult(JSON.parse(current));
   }, []);
+
+  const handleLike = useCallback(async (index: number) => {
+    if (!result) return;
+    // 이미 선택된 항목 재클릭 시 취소
+    if (likedIndex === index) { setLikedIndex(null); return; }
+    setLikedIndex(index);
+
+    const copy = result.adCopies[index];
+    const genre = result.games[0]?.genre ?? "";
+    const toneNames = ["Excitement", "Challenge", "Curiosity", "FOMO", "Simplicity", "Empathy"];
+
+    await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: result.query,
+        genre,
+        preferredTone: toneNames[index % 6],
+        hook: copy.hook,
+      }),
+    }).catch(() => {}); // 비성공해도 UI에 영향 없음
+  }, [result, likedIndex]);
 
   const copyShareLink = useCallback(() => {
     const id = localStorage.getItem("centinel_current_id");
@@ -161,7 +184,15 @@ export default function ResultPage() {
               </div>
               <div className="pdf-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {result.adCopies.map((copy, i) => (
-                  <AdCopyCard key={i} adCopy={copy} index={i} />
+                  <AdCopyCard
+                    key={i}
+                    adCopy={copy}
+                    index={i}
+                    query={result.query}
+                    genre={result.games[0]?.genre}
+                    liked={likedIndex === i}
+                    onLike={handleLike}
+                  />
                 ))}
               </div>
             </div>
