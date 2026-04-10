@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const QUICK_CHIPS = [
@@ -78,18 +78,6 @@ export default function SearchForm() {
   const router = useRouter();
 
   useEffect(() => { setMounted(true); }, []);
-
-  // TrendCharts에서 게임 선택 시 자동 실행
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const { query: q, appId, chartRank, chartLabel } = (e as CustomEvent<{ query: string; appId?: string; chartRank?: number; chartLabel?: string }>).detail;
-      setQuery(q);
-      setTimeout(() => handleSubmit(q, appId, chartRank, chartLabel), 0);
-    };
-    window.addEventListener("centinel:autorun", handler);
-    return () => window.removeEventListener("centinel:autorun", handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const setStep = (index: number, status: StepStatus) => {
     setStepStatuses(prev => prev.map((s, i) => i === index ? status : s));
@@ -188,6 +176,21 @@ export default function SearchForm() {
       setLoading(false);
     }
   };
+
+  // handleSubmit ref — 항상 최신 lang을 캡처하도록 (stale closure 방지)
+  const handleSubmitRef = useRef(handleSubmit);
+  useEffect(() => { handleSubmitRef.current = handleSubmit; });
+
+  // TrendCharts에서 게임 선택 시 자동 실행
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { query: q, appId, chartRank, chartLabel } = (e as CustomEvent<{ query: string; appId?: string; chartRank?: number; chartLabel?: string }>).detail;
+      setQuery(q);
+      setTimeout(() => handleSubmitRef.current(q, appId, chartRank, chartLabel), 0);
+    };
+    window.addEventListener("centinel:autorun", handler);
+    return () => window.removeEventListener("centinel:autorun", handler);
+  }, []);
 
   return (
     <div className="w-full">

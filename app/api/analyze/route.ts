@@ -373,8 +373,16 @@ async function analyzeWhyChart(
 
   const gameList = topGames
     .map((g) => {
-      const rankLabel = g.chartRank ? `TOP ${g.chartRank}위` : "인기 게임";
-      const changeLabel = (g.rankChange ?? 0) > 0 ? ` (▲${g.rankChange} 급상승)` : (g.rankChange ?? 0) < 0 ? ` (▼${Math.abs(g.rankChange!)} 하락)` : "";
+      const rankLabel = g.chartRank
+        ? `Google TOP ${g.chartRank}위`
+        : g.iosChartRank
+          ? `iOS TOP ${g.iosChartRank}위`
+          : "인기 게임";
+      const changeLabel = (g.rankChange ?? g.iosRankChange ?? 0) > 0
+        ? ` (▲${g.rankChange ?? g.iosRankChange} 급상승)`
+        : (g.rankChange ?? g.iosRankChange ?? 0) < 0
+          ? ` (▼${Math.abs((g.rankChange ?? g.iosRankChange)!)} 하락)`
+          : "";
       return `- appId: ${g.appId} | ${g.title} [${rankLabel}${changeLabel}] | Genre: ${g.genre} | Developer: ${g.developer}\n  Description: ${g.description.slice(0, 200)}`;
     })
     .join("\n");
@@ -382,10 +390,10 @@ async function analyzeWhyChart(
   const message = await client.messages.create({
     model: HAIKU,
     max_tokens: 1800,
-    system: "Mobile game market analyst. Explain WHY each game is popular in Google Play charts. Be specific — cover gameplay hook, social mechanics, monetization fit. Output raw JSON only.",
+    system: "Mobile game market analyst. Explain WHY each game is popular in app store charts (Google Play or iOS App Store). Be specific — cover gameplay hook, social mechanics, monetization fit. Output raw JSON only.",
     messages: [{
       role: "user",
-      content: `These games are currently in Google Play charts:\n\n${gameList}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nFor each game, write 2-3 sentences explaining why it's charting. Cover whichever of these apply: core gameplay hook, retention driver, social/viral mechanic (skip if not applicable), monetization fit, and why it resonates with today's audience. Only mention what actually applies to that specific game.\n\nRespond with JSON:\n{\n  "insights": [\n    { "appId": "com.example", "reason": "..." }\n  ]\n}`,
+      content: `These games are currently charting:\n\n${gameList}\n\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nFor each game, write 2-3 sentences explaining why it's charting. Cover whichever of these apply: core gameplay hook, retention driver, social/viral mechanic (skip if not applicable), monetization fit, and why it resonates with today's audience. Only mention what actually applies to that specific game.\n\nRespond with JSON:\n{\n  "insights": [\n    { "appId": "com.example", "reason": "..." }\n  ]\n}`,
     }],
   });
 
@@ -432,8 +440,8 @@ export async function POST(req: NextRequest) {
         // ── Stage 1: Trend Analysis + Why Chart + Vision (parallel) ──
         // Prefer chart game whose title matches the search query; fall back to highest rank
         const allChartGames = (games as GameData[])
-          .filter((g) => g.chartRank != null)
-          .sort((a, b) => (a.chartRank ?? 99) - (b.chartRank ?? 99));
+          .filter((g) => g.chartRank != null || g.iosChartRank != null)
+          .sort((a, b) => (a.chartRank ?? a.iosChartRank ?? 99) - (b.chartRank ?? b.iosChartRank ?? 99));
         const queryLower = query.toLowerCase();
         const matchedChartGame = allChartGames.find(
           (g) => g.title.toLowerCase().includes(queryLower) || queryLower.includes(g.title.toLowerCase())
