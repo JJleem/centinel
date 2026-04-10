@@ -22,7 +22,7 @@ const AD_COPY_SYSTEM_COMMON = `For each ad copy, generate these additional field
 imagePrompt: Midjourney/DALL-E 3 English image generation prompt. Format: "A [mood] mobile game advertisement thumbnail, [key visual elements], [colors], [composition], isometric 3D style, hyper-casual, clean UI --ar 9:16 --style raw --v 6". Always in English. Max 60 words.
 shortFormScript: keep concise, max 60 words.
 psychologicalTags: 2~3 psychological targeting tags matching the copy's tone and target audience. Choose from or create new ones based on: "🔥 승부욕 자극", "😌 스트레스 해소", "🧩 두뇌 자극", "😱 FOMO 유발", "✨ ASMR 만족감", "🏆 성취감", "🤔 호기심 폭발", "💪 도전 욕구", "😊 힐링", "⚡ 즉각 만족", "👥 사회적 증거", "🎯 집중력"
-expectedCTR: predicted CTR score 1~10 (one decimal). Base on genre/trend fit. The 6 copies must have different scores — highest 7~9, lowest 4~6.
+expectedCTR: predicted CTR score 1~10 (one decimal). Score based on how well this specific hook fits the game's genre and target audience — NOT based on tone stereotypes (FOMO is not always highest). All 6 scores must be unique. Distribute realistically: winning tone 7.5~9.0, mid tones 5.5~7.4, weakest tone 4.0~5.4. Vary the winner each analysis.
 For tone #6 (Empathy/Storytelling): warm and emotional storytelling targeting office workers or people needing a short break. Hook starts from a relatable everyday situation (e.g. "퇴근길 지하철에서...", "점심시간 10분이 남았을 때"). Main copy frames the game as a small escape from daily life. Short-form script: relatable situation → gameplay → healing ending. Psychological tags must include "😌 일상 탈출" and/or "🤝 공감 유발". Image prompt: warm, cozy, soft-lit atmosphere.`;
 
 // Robust JSON parser: cleans up common Claude output issues before giving up
@@ -256,21 +256,22 @@ async function synthesizeAdCopies(
 ): Promise<AdCopy[]> {
   const allCopies = [...copiesA, ...copiesB]; // indices 0–5: Perf, 6–11: Brand
 
+  // ctr 제외 — CTR 편향(FOMO 항상 1위)을 막고 hook+copy 품질로만 선택
   const slim = allCopies.map((c, i) => ({
     i,
     variant: i < 6 ? "Perf" : "Brand",
     tone: TONE_NAMES[i % 6],
     hook: c.hook,
-    ctr: c.expectedCTR,
+    mainCopy: c.mainCopy,
   }));
 
   const message = await client.messages.create({
     model: SONNET,
     max_tokens: 80,
-    system: "Mobile game UA strategist. Pick the best ad copy per tone. Output raw JSON only.",
+    system: "Mobile game UA strategist. Pick the best ad copy per tone based on hook strength and copy quality — ignore CTR scores. Output raw JSON only.",
     messages: [{
       role: "user",
-      content: `12 ad copies for "${query}" — pick 1 winner per tone (Perf vs Brand):\n${JSON.stringify(slim)}\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond: {"selected":[i_Excitement,i_Challenge,i_Curiosity,i_FOMO,i_Simplicity,i_Empathy]}`,
+      content: `12 ad copies for "${query}" — pick 1 winner per tone (Perf vs Brand) based on which hook is more compelling and specific to this game:\n${JSON.stringify(slim)}\n${LANG_INSTRUCTION[lang] ?? LANG_INSTRUCTION.EN}\nRespond: {"selected":[i_Excitement,i_Challenge,i_Curiosity,i_FOMO,i_Simplicity,i_Empathy]}`,
     }],
   });
 
