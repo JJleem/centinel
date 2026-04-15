@@ -14,6 +14,20 @@ type ImageMediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SONNET = "claude-sonnet-4-20250514";
+
+// ── Per-instance rate limiter: 5 requests / 60s per IP ────────────────────
+const _rl = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = _rl.get(ip);
+  if (!entry || now > entry.resetAt) {
+    _rl.set(ip, { count: 1, resetAt: now + 60_000 });
+    return true;
+  }
+  if (entry.count >= 5) return false;
+  entry.count++;
+  return true;
+}
 const HAIKU = "claude-haiku-4-5-20251001";
 const TONE_NAMES = ["Excitement", "Challenge", "Curiosity", "FOMO", "Simplicity", "Empathy"] as const;
 
@@ -453,6 +467,11 @@ async function analyzeWhyChart(
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json({ error: "요청이 너무 많습니다. 1분 후 다시 시도해주세요." }, { status: 429 });
+  }
+
   const { query, games, lang = "EN" } = await req.json();
 
   if (!query || !games || !Array.isArray(games)) {

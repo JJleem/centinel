@@ -114,6 +114,10 @@ export default function SearchForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: searchQuery, games: scrapeData.games, lang }),
       });
+      if (analyzeRes.status === 429) {
+        const { error: rateLimitMsg } = await analyzeRes.json().catch(() => ({}));
+        throw new Error(rateLimitMsg ?? "요청이 너무 많습니다. 1분 후 다시 시도해주세요.");
+      }
       if (!analyzeRes.ok) throw new Error("Analyze request failed");
       if (!analyzeRes.body) throw new Error("No response body");
 
