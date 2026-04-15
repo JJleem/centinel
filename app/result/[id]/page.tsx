@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 
 function SafeImg({ src, alt, className }: { src: string; alt: string; className?: string }) {
@@ -33,6 +33,28 @@ export default function SharedResultPage() {
   const { id } = useParams<{ id: string }>();
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState(false);
+  const [likedIndex, setLikedIndex] = useState<number | null>(null);
+  const [feedbackToast, setFeedbackToast] = useState<"success" | "error" | null>(null);
+
+  const handleLike = useCallback(async (index: number) => {
+    if (!result) return;
+    if (likedIndex === index) { setLikedIndex(null); return; }
+    setLikedIndex(index);
+    const copy = result.adCopies[index];
+    const genre = result.games[0]?.genre ?? "";
+    const toneNames = ["Excitement", "Challenge", "Curiosity", "FOMO", "Simplicity", "Empathy"];
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: result.query, genre, preferredTone: toneNames[index % 6], hook: copy.hook }),
+      });
+      setFeedbackToast(res.ok ? "success" : "error");
+    } catch {
+      setFeedbackToast("error");
+    }
+    setTimeout(() => setFeedbackToast(null), 2500);
+  }, [result, likedIndex]);
 
   useEffect(() => {
     fetch(`/api/history/${id}`)
@@ -46,6 +68,16 @@ export default function SharedResultPage() {
 
   return (
     <div className="min-h-screen text-[#0A1929]" style={{ background: "#F8FBFF" }}>
+      {feedbackToast && (
+        <div
+          className="fixed bottom-6 right-6 z-[100] px-4 py-2.5 rounded-[10px] text-sm font-semibold shadow-lg"
+          style={feedbackToast === "success"
+            ? { background: "#E6FAF5", color: "#00875A", border: "1px solid #B2EADC" }
+            : { background: "#FEF0ED", color: "#C0392B", border: "1px solid #F9C9BE" }}
+        >
+          {feedbackToast === "success" ? "✓ 피드백이 저장됐어요" : "⚠ 피드백 저장에 실패했어요"}
+        </div>
+      )}
       <nav className="bg-white border-b border-[#E8F4FC] shadow-sm px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
           <div
@@ -116,7 +148,7 @@ export default function SharedResultPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {result.adCopies.map((copy, i) => (
-                  <AdCopyCard key={i} adCopy={copy} index={i} />
+                  <AdCopyCard key={i} adCopy={copy} index={i} query={result.query} genre={result.games[0]?.genre} liked={likedIndex === i} onLike={handleLike} />
                 ))}
               </div>
             </div>
