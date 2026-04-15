@@ -146,7 +146,7 @@ export default function SearchForm() {
 
       if (!finalResult) throw new Error("분석 결과를 받지 못했습니다");
 
-      const resultWithFallback = { ...finalResult, usedFallback: scrapeData.usedFallback ?? false, lang };
+      const resultWithFallback = { ...finalResult, usedFallback: scrapeData.usedFallback ?? false, ...(scrapeData.fallbackGenre ? { fallbackGenre: scrapeData.fallbackGenre } : {}), lang };
 
       // Save to DB (get UUID for share link)
       let resultId: string | null = null;

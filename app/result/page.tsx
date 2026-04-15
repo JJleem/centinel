@@ -188,7 +188,7 @@ export default function ResultPage() {
                   <p className="text-xs text-[#4A6080] mt-0.5">수집된 게임 전체를 앙상블 분석 · 장르 패턴, 수익 모델, 시장 기회를 도출합니다</p>
                 </div>
               </div>
-              <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} games={result.games} lang={result.lang} resultId={typeof window !== "undefined" ? localStorage.getItem("centinel_current_id") : null} visionResult={result.visionResult} />
+              <TrendCard insight={result.insight} query={result.query} usedFallback={result.usedFallback} fallbackGenre={result.fallbackGenre} games={result.games} lang={result.lang} resultId={typeof window !== "undefined" ? localStorage.getItem("centinel_current_id") : null} visionResult={result.visionResult} />
             </div>
 
             {/* Ad copies */}

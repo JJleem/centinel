@@ -8,6 +8,7 @@ interface Props {
   insight: InsightSummary;
   query: string;
   usedFallback?: boolean;
+  fallbackGenre?: string;
   games?: GameData[];
   lang?: string;
   resultId?: string | null;
@@ -50,7 +51,7 @@ function GameIcon({ game, index }: { game: GameData; index: number }) {
   );
 }
 
-export default function TrendCard({ insight, query, usedFallback, games, lang, resultId, visionResult }: Props) {
+export default function TrendCard({ insight, query, usedFallback, fallbackGenre, games, lang, resultId, visionResult }: Props) {
   return (
     <div className="pdf-card bg-white border border-[#E8F4FC] rounded-[14px] p-6 shadow-sm overflow-hidden relative">
       {/* Left gradient accent bar */}
@@ -61,7 +62,7 @@ export default function TrendCard({ insight, query, usedFallback, games, lang, r
 
       {usedFallback && (
         <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-[10px] bg-yellow-50 border border-yellow-200 text-yellow-700 text-xs">
-          ⚠️ 검색 결과가 부족하여 유사 장르 데이터로 분석했습니다
+          ⚠️ 검색 결과가 부족하여 유사 장르 데이터로 분석했습니다{fallbackGenre ? ` (대체 장르: ${fallbackGenre})` : ""}
         </div>
       )}
 

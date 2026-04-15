@@ -131,6 +131,9 @@ export async function POST(req: NextRequest) {
       .filter((r) => r.status === "fulfilled")
       .map((r) => (r as PromiseFulfilledResult<unknown>).value);
 
+    let usedFallback = false;
+    let fallbackGenre: string | undefined;
+
     if (appId && rawResults.filter((a) => (a as { genreId?: string }).genreId?.startsWith("GAME")).length < 3) {
       const existingIds = new Set(rawResults.map((a) => (a as { appId?: string }).appId));
       const [appDetail, similar] = await Promise.allSettled([
@@ -140,6 +143,7 @@ export async function POST(req: NextRequest) {
       if (appDetail.status === "fulfilled" && !existingIds.has(appDetail.value?.appId)) {
         rawResults = [appDetail.value, ...rawResults];
         existingIds.add(appDetail.value?.appId);
+        fallbackGenre = (appDetail.value as RawApp).genre ?? (appDetail.value as RawApp).genreId ?? undefined;
       }
       if (similar.status === "fulfilled") {
         const extras = (similar.value as { appId?: string }[]).filter((a) => !existingIds.has(a.appId));
@@ -150,6 +154,7 @@ export async function POST(req: NextRequest) {
           ...rawResults,
           ...detailedExtras.filter((r) => r.status === "fulfilled").map((r) => (r as PromiseFulfilledResult<unknown>).value),
         ];
+        usedFallback = true;
       }
     }
 
@@ -266,7 +271,7 @@ export async function POST(req: NextRequest) {
       console.error("[scrape] chart enrichment failed:", e);
     }
 
-    const response: ScrapeResponse = { games, source: "scrape", usedFallback: false };
+    const response: ScrapeResponse = { games, source: "scrape", usedFallback, ...(fallbackGenre ? { fallbackGenre } : {}) };
     return NextResponse.json(response);
   } catch (error: unknown) {
     const err = error as { message?: string; code?: string };

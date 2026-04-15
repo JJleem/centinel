@@ -72,6 +72,7 @@ export interface AnalysisResult {
   visionResult?: VisionResult | null;
   createdAt: string;
   usedFallback?: boolean;
+  fallbackGenre?: string;
   lang?: string;
 }
 
@@ -79,6 +80,7 @@ export interface ScrapeResponse {
   games: GameData[];
   source: "scrape" | "fallback";
   usedFallback: boolean;
+  fallbackGenre?: string;
 }
 
 export interface AnalyzeResponse {
