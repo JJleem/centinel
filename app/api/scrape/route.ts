@@ -60,7 +60,7 @@ async function fetchIosData(query: string): Promise<{ iosGames: RawIosApp[]; ios
         const latest = times[0].fetched_at;
         const latestDate = new Date(latest);
         const previous = times.find(
-          (t) => new Date(t.fetched_at).getTime() < latestDate.getTime() - 60 * 60 * 1000
+          (t) => new Date(t.fetched_at).getTime() < latestDate.getTime() - 45 * 60 * 1000
         );
 
         const { data: newSnap } = await supabase
@@ -229,7 +229,7 @@ export async function POST(req: NextRequest) {
         const latest = times[0].fetched_at;
         const latestDate = new Date(latest);
         const previous = times.find(
-          (t) => new Date(t.fetched_at).getTime() < latestDate.getTime() - 60 * 60 * 1000
+          (t) => new Date(t.fetched_at).getTime() < latestDate.getTime() - 45 * 60 * 1000
         );
 
         const { data: newSnap } = await supabase
