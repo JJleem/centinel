@@ -292,7 +292,7 @@ async function analyzeVision(games: GameData[], lang: string): Promise<VisionRes
     .map((g) => ({ appId: g.appId, title: g.title, url: g.screenshots?.[0] ?? null }))
     .filter((j): j is { appId: string; title: string; url: string } => j.url !== null);
 
-  if (imageJobs.length < 3) return null;
+  if (imageJobs.length < 2) return null;
 
   // ── Cache check — key: sorted "appId:url" pairs ───────────────────────
   const { supabase } = await import("@/lib/supabase");
@@ -328,7 +328,7 @@ async function analyzeVision(games: GameData[], lang: string): Promise<VisionRes
     .filter((r): r is PromiseFulfilledResult<{ title: string; data: string; mediaType: ImageMediaType }> => r.status === "fulfilled")
     .map((r) => r.value);
 
-  if (fetched.length < 3) return null;
+  if (fetched.length < 2) return null;
 
   type ContentBlock =
     | { type: "text"; text: string }
