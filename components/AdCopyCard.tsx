@@ -133,10 +133,10 @@ export default function AdCopyCard({ adCopy, index, query, genre, liked, onLike 
               className="no-print text-xs px-2.5 py-1 rounded-[8px] border transition-all duration-200 hover:opacity-80"
               style={liked
                 ? { background: "#FFF0F6", borderColor: "#FFB3D1", color: "#E91E8C", fontWeight: 700 }
-                : { background: "#F8FBFF", borderColor: "#E8F4FC", color: "#94A3B8" }}
+                : { background: "#F0F4FA", borderColor: "#C8D8EC", color: "#4A6080" }}
               title="이 광고 소재가 마음에 들어요"
             >
-              {liked ? "👍 선택됨" : "👍"}
+              {liked ? "👍 선택됨" : "👍 좋아요"}
             </button>
           )}
           <button
