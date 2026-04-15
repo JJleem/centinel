@@ -90,20 +90,26 @@ export async function GET(req: NextRequest) {
 
   // ── 2. Live-fetch fallback (DB empty / stale) ──────────────────────────
 
-  // iOS live fallback (limit 30 — individual score fetches are slow)
+  // iOS live fallback — fetch 200, score in chunks of 20 to avoid rate-limiting
   if (tab in IOS_LIVE) {
     const config = IOS_LIVE[tab];
     try {
-      const results = await store.list({ collection: config.collection, category: config.category, num: 30, country: "us" });
+      const results = await store.list({ collection: config.collection, category: config.category, num: 200, country: "us" });
 
       type ListItem = { title?: string; id?: number; developer?: string; icon?: string; primaryGenreName?: string };
       type AppDetail = { score?: number };
-      const scoreResults = await Promise.allSettled(
-        results.map((app: ListItem) => store.app({ id: app.id, country: "us" }))
-      );
+      const CHUNK = 20;
+      const allScoreResults: PromiseSettledResult<AppDetail>[] = [];
+      for (let i = 0; i < results.length; i += CHUNK) {
+        const chunk = results.slice(i, i + CHUNK);
+        const chunkResults = await Promise.allSettled(
+          chunk.map((app: ListItem) => store.app({ id: app.id, country: "us" }))
+        );
+        allScoreResults.push(...chunkResults);
+      }
       const scoreMap = new Map<number, number>(
         results.map((app: ListItem, i: number) => {
-          const d = scoreResults[i];
+          const d = allScoreResults[i];
           return [app.id ?? 0, d.status === "fulfilled" ? ((d.value as AppDetail).score ?? 0) : 0];
         })
       );

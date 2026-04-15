@@ -99,9 +99,17 @@ export async function GET(req: NextRequest) {
 
       type IosListItem = { title?: string; id?: number; appId?: string; developer?: string; icon?: string; primaryGenreName?: string };
       type IosAppDetail = { score?: number };
-      const scoreResults = await Promise.allSettled(
-        games.map((app: IosListItem) => store.app({ id: app.id, country: "us" }))
-      );
+
+      // Fetch scores in chunks of 20 to avoid rate-limiting 200 parallel requests
+      const CHUNK = 20;
+      const scoreResults: PromiseSettledResult<IosAppDetail>[] = [];
+      for (let i = 0; i < games.length; i += CHUNK) {
+        const chunk = games.slice(i, i + CHUNK);
+        const chunkResults = await Promise.allSettled(
+          chunk.map((app: IosListItem) => store.app({ id: app.id, country: "us" }))
+        );
+        scoreResults.push(...chunkResults);
+      }
 
       const rows = games.map((app: IosListItem, i: number) => {
         const detail = scoreResults[i];
