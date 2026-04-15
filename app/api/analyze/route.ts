@@ -297,10 +297,12 @@ async function analyzeVision(games: GameData[], lang: string): Promise<VisionRes
   // ── Cache check — key: sorted "appId:url" pairs ───────────────────────
   const { supabase } = await import("@/lib/supabase");
   const cacheKey = imageJobs.map((j) => `${j.appId}:${j.url}`).sort().join("|");
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const { data: cached } = await supabase
     .from("vision_cache")
     .select("result, analyzed_count")
     .eq("cache_key", cacheKey)
+    .gte("created_at", thirtyDaysAgo)
     .single();
 
   if (cached) {
@@ -387,6 +389,17 @@ Output raw JSON only — no markdown, no code blocks:
   });
 
   return { ...parsed, analyzedCount: fetched.length };
+}
+
+// ── CTR deduplication: nudge duplicate scores by +0.1 until all 6 are unique ──
+function deduplicateCTR(copies: AdCopy[]): AdCopy[] {
+  const seen = new Set<number>();
+  return copies.map((copy) => {
+    let ctr = Math.round((copy.expectedCTR ?? 5.0) * 10) / 10;
+    while (seen.has(ctr)) ctr = Math.round((ctr + 0.1) * 10) / 10;
+    seen.add(ctr);
+    return { ...copy, expectedCTR: ctr };
+  });
 }
 
 // ── Agent 0: Why Chart (Haiku, for any game appearing in top chart) ────────
@@ -532,7 +545,7 @@ export async function POST(req: NextRequest) {
         send({ event: "copies_ensemble_done", message: "광고 소재 앙상블 완료 (Haiku ×2)" });
 
         // ── Orchestrator: Select best ad copies (Sonnet) ───────────────
-        const adCopies = await synthesizeAdCopies(copiesA, copiesB, query, lang);
+        const adCopies = deduplicateCTR(await synthesizeAdCopies(copiesA, copiesB, query, lang));
 
         const result: AnalysisResult = {
           query,

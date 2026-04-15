@@ -25,11 +25,24 @@ export async function GET(req: NextRequest) {
   }
 
   const fetchedAt = new Date().toISOString();
-  const results: { platform: string; collection: string; category: string; count: number }[] = [];
+  const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  const results: { platform: string; collection: string; category: string; count: number; skipped?: boolean }[] = [];
 
   // ── Google Play snapshots ──────────────────────────────────────────────
   for (const tab of GOOGLE_TABS) {
     try {
+      const { count: recentCount } = await supabase
+        .from("chart_snapshots")
+        .select("id", { count: "exact", head: true })
+        .eq("collection", tab.collection)
+        .eq("category", tab.category)
+        .eq("platform", "google")
+        .gte("fetched_at", thirtyMinAgo);
+      if (recentCount && recentCount > 0) {
+        results.push({ platform: "google", ...tab, count: 0, skipped: true });
+        continue;
+      }
+
       const games = await gplay.list({
         collection: tab.collection,
         category: tab.category,
@@ -65,6 +78,18 @@ export async function GET(req: NextRequest) {
   // ── iOS App Store snapshots ────────────────────────────────────────────
   for (const tab of IOS_TABS) {
     try {
+      const { count: recentCountIos } = await supabase
+        .from("chart_snapshots")
+        .select("id", { count: "exact", head: true })
+        .eq("collection", tab.label)
+        .eq("category", "GAME_IOS")
+        .eq("platform", "ios")
+        .gte("fetched_at", thirtyMinAgo);
+      if (recentCountIos && recentCountIos > 0) {
+        results.push({ platform: "ios", collection: tab.label, category: "GAME_IOS", count: 0, skipped: true });
+        continue;
+      }
+
       const games = await store.list({
         collection: tab.collection,
         category:   tab.category,
