@@ -196,33 +196,30 @@ export default function SearchForm() {
     return () => window.removeEventListener("centinel:autorun", handler);
   }, []);
 
+  const [inputFocused, setInputFocused] = useState(false);
+
   return (
     <div className="w-full">
       {/* Lang toggle row */}
       <div className="flex items-center justify-between mb-3 px-1">
-        <span className="text-[#4A6080] text-xs">장르 · 경쟁사 · 게임명 검색</span>
+        <span className="text-[#4A6080] text-xs font-medium">장르 · 경쟁사 · 게임명 검색</span>
         <div className="flex items-center gap-2.5">
-          {/* Hint bubble */}
           {mounted && !loading && query.trim().length === 0 && (
             <div className="relative flex items-center">
-              <div className="bg-[#EBF5FC] border border-[#C8E4F4] text-[#1A7AAF] text-[11px] leading-tight px-2.5 py-1.5 rounded-[10px] whitespace-nowrap">
+              <div className="bg-[#EBF5FC] border border-[#C8E4F4] text-[#1A7AAF] text-[11px] leading-tight px-2.5 py-1.5 rounded-[10px] whitespace-nowrap animate-[fadeIn_0.3s_ease]">
                 결과 언어를 선택해주세요
               </div>
               <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[6px] border-t-transparent border-b-transparent border-l-[#C8E4F4]" />
             </div>
           )}
-
-          {/* Lang toggle */}
-          <div className="flex items-center gap-1 bg-[#F8FBFF] border border-[#E8F4FC] rounded-[10px] p-0.5">
+          <div className="flex items-center gap-1 bg-white border border-[#E8F4FC] rounded-[10px] p-0.5 shadow-sm">
             {(["EN", "KO"] as Lang[]).map((l) => (
               <button
                 key={l}
                 onClick={() => setLang(l)}
                 disabled={loading}
                 className={`px-3 py-1 text-xs font-semibold rounded-[8px] transition-all duration-200 disabled:cursor-not-allowed ${
-                  lang === l
-                    ? "text-white shadow-sm"
-                    : "text-[#4A6080] hover:text-[#0A1929]"
+                  lang === l ? "text-white shadow-sm" : "text-[#4A6080] hover:text-[#0A1929]"
                 }`}
                 style={lang === l ? { background: "linear-gradient(135deg, #0B7FD4, #6B4EFF)" } : {}}
               >
@@ -234,22 +231,37 @@ export default function SearchForm() {
       </div>
 
       {/* Input row */}
-      <div className="flex gap-3 mb-4">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSubmit(query)}
-          placeholder="게임명, 장르, 경쟁사를 입력하세요 (예: hyper casual, Voodoo)"
-          className="flex-1 rounded-[10px] px-5 py-4 text-[#0A1929] placeholder-[#4A6080] text-base focus:outline-none focus:ring-2 transition-all border"
-          style={{ background: "#F8FBFF", borderColor: "#C8E4F4" }}
-          disabled={loading}
-        />
+      <div className="flex gap-2.5 mb-4">
+        <div
+          className="flex-1 relative transition-all duration-200"
+          style={{ filter: inputFocused ? "drop-shadow(0 0 12px rgba(11,127,212,0.18))" : "none" }}
+        >
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit(query)}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
+            placeholder="게임명, 장르, 경쟁사를 입력하세요 (예: hyper casual, Voodoo)"
+            className="w-full rounded-[12px] px-5 py-4 text-[#0A1929] placeholder-[#94A3B8] text-base focus:outline-none transition-all duration-200 border-2 bg-white"
+            style={{
+              borderColor: inputFocused ? "#0B7FD4" : "#E8F4FC",
+              boxShadow: inputFocused ? "0 0 0 3px rgba(11,127,212,0.10)" : "0 1px 3px rgba(0,0,0,0.04)",
+            }}
+            disabled={loading}
+          />
+        </div>
         <button
           onClick={() => handleSubmit(query)}
           disabled={loading || query.trim().length < 2}
-          className="px-6 py-4 text-white font-bold text-sm rounded-[10px] shadow-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
-          style={{ background: "linear-gradient(135deg, #0B7FD4, #6B4EFF)" }}
+          className="px-6 py-4 text-white font-bold text-sm rounded-[12px] shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 whitespace-nowrap active:scale-95"
+          style={{
+            background: "linear-gradient(135deg, #0B7FD4, #6B4EFF)",
+            boxShadow: loading || query.trim().length < 2 ? "none" : "0 4px 14px rgba(11,127,212,0.35)",
+          }}
+          onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px) scale(1.02)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = ""; }}
         >
           {loading ? "분석 중..." : "분석 시작"}
         </button>
@@ -263,8 +275,8 @@ export default function SearchForm() {
               key={chip}
               onClick={() => setQuery(chip)}
               disabled={loading}
-              className="px-4 py-2 text-[#1A7AAF] text-sm rounded-full border transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#0B7FD4] hover:text-[#0B7FD4]"
-              style={{ background: "#EBF5FC", borderColor: "#C8E4F4" }}
+              className="px-3.5 py-1.5 text-[#1A7AAF] text-sm rounded-full border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#0B7FD4] hover:text-[#0B7FD4] hover:-translate-y-0.5 hover:shadow-sm active:scale-95 bg-white"
+              style={{ borderColor: "#C8E4F4" }}
             >
               {chip}
             </button>
@@ -274,13 +286,13 @@ export default function SearchForm() {
 
       {/* Step-based loading UI */}
       {loading && (
-        <div className="space-y-2">
+        <div className="space-y-2 animate-[fadeIn_0.3s_ease]">
           <div className="bg-white border border-[#E8F4FC] rounded-[14px] p-5 space-y-3.5 shadow-sm">
             {STEP_LABELS.map((label, i) => (
               <StepIndicator key={i} status={stepStatuses[i]} label={label} />
             ))}
           </div>
-          <div className="flex items-center gap-2 px-3 py-2 rounded-[10px] border" style={{ background: "#F5F0FF", borderColor: "#D4C9FF" }}>
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] border" style={{ background: "#F5F0FF", borderColor: "#D4C9FF" }}>
             <span className="text-base shrink-0">⏱️</span>
             <p className="text-xs text-[#6B4EFF] leading-snug">
               분석에 <strong>1~3분</strong> 정도 소요됩니다. 페이지를 닫지 말아주세요.
@@ -290,7 +302,7 @@ export default function SearchForm() {
       )}
 
       {insufficientResults && (
-        <div className="mt-3 bg-amber-50 border border-amber-200 rounded-[10px] px-4 py-3">
+        <div className="mt-3 bg-amber-50 border border-amber-200 rounded-[10px] px-4 py-3 animate-[fadeIn_0.3s_ease]">
           <p className="text-amber-700 text-sm font-medium mb-2">
             검색 결과가 부족하여 분석할 수 없습니다. 아래 검색어로 시도해보세요.
           </p>
@@ -299,7 +311,7 @@ export default function SearchForm() {
               <button
                 key={chip}
                 onClick={() => { setInsufficientResults(false); setQuery(chip); handleSubmit(chip); }}
-                className="px-3 py-1 text-sm rounded-full border transition-colors hover:border-[#0B7FD4] hover:text-[#0B7FD4]"
+                className="px-3 py-1 text-sm rounded-full border transition-all hover:border-[#0B7FD4] hover:text-[#0B7FD4] hover:scale-105 active:scale-95"
                 style={{ background: "#EBF5FC", borderColor: "#C8E4F4", color: "#1A7AAF" }}
               >
                 {chip}
@@ -310,8 +322,15 @@ export default function SearchForm() {
       )}
 
       {error && (
-        <p className="text-red-500 text-sm text-center mt-3 bg-red-50 border border-red-200 rounded-[10px] py-2">{error}</p>
+        <p className="text-red-500 text-sm text-center mt-3 bg-red-50 border border-red-200 rounded-[10px] py-2 animate-[fadeIn_0.3s_ease]">{error}</p>
       )}
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
