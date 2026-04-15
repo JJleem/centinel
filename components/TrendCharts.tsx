@@ -163,11 +163,12 @@ export default function TrendCharts() {
       .finally(() => setLoading(false));
   }, [activeTab, platform]);
 
-  // Reset rank range when switching to surge tab
+  // Reset rank range when switching tabs or platforms
   useEffect(() => {
     if (activeTab === "surge") setRankRange("all");
     else if (rankRange === "all") setRankRange("1-50");
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+    else if (platform === "ios" && rankRange === "101-200") setRankRange("1-50");
+  }, [activeTab, platform]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredGames = useMemo(() => {
     if (activeTab === "surge" || rankRange === "all") return games;
@@ -262,7 +263,7 @@ export default function TrendCharts() {
       {activeTab !== "surge" && !loading && games.length > 50 && (
         <div className="flex items-center gap-1 mb-2.5">
           <span className="text-[10px] text-[#4A6080] mr-1">구간</span>
-          {RANK_RANGES.map((r) => (
+          {RANK_RANGES.filter((r) => !(platform === "ios" && r.key === "101-200")).map((r) => (
             <button
               key={r.key}
               onClick={() => setRankRange(r.key)}
