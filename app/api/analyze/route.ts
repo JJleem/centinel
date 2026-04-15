@@ -31,6 +31,24 @@ function checkRateLimit(ip: string): boolean {
 const HAIKU = "claude-haiku-4-5-20251001";
 const TONE_NAMES = ["Excitement", "Challenge", "Curiosity", "FOMO", "Simplicity", "Empathy"] as const;
 
+// ── Token usage accumulator ───────────────────────────────────────────────
+type TokenAccumulator = {
+  sonnet: { input: number; output: number };
+  haiku:  { input: number; output: number };
+};
+function mkAcc(): TokenAccumulator {
+  return { sonnet: { input: 0, output: 0 }, haiku: { input: 0, output: 0 } };
+}
+function addUsage(acc: TokenAccumulator, model: string, usage: { input_tokens: number; output_tokens: number }) {
+  const bucket = model.includes("haiku") ? acc.haiku : acc.sonnet;
+  bucket.input  += usage.input_tokens;
+  bucket.output += usage.output_tokens;
+}
+function calcCost(acc: TokenAccumulator): number {
+  return (acc.sonnet.input * 3 + acc.haiku.input * 0.8) / 1_000_000
+       + (acc.sonnet.output * 15 + acc.haiku.output * 4) / 1_000_000;
+}
+
 // Shared system prompt block for Agent 3A & 3B — ~220 tokens saved per call vs duplication
 const AD_COPY_SYSTEM_COMMON = `For each ad copy, generate these additional fields:
 imagePrompt: Midjourney/DALL-E 3 English image generation prompt. Format: "A [mood] mobile game advertisement thumbnail, [key visual elements], [colors], [composition], isometric 3D style, hyper-casual, clean UI --ar 9:16 --style raw --v 6". Always in English. Max 60 words.
@@ -75,7 +93,7 @@ const LANG_INSTRUCTION: Record<string, string> = {
 };
 
 // ── Agent 1: Trend Analyst (Sonnet) ────────────────────────────────────────
-async function analyzeTrends(games: GameData[], lang: string): Promise<TrendAnalysis> {
+async function analyzeTrends(games: GameData[], lang: string, acc: TokenAccumulator): Promise<TrendAnalysis> {
   const gameListText = games
     .map((g, i) =>
       `${i + 1}. ${g.title} (${g.developer}) - Genre: ${g.genre}, Score: ${g.score}\nDescription: ${g.description}`
@@ -98,6 +116,7 @@ async function analyzeTrends(games: GameData[], lang: string): Promise<TrendAnal
     }],
   });
 
+  addUsage(acc, SONNET, message.usage);
   const text = message.content[0].type === "text" ? message.content[0].text : "";
   return parseJSON<TrendAnalysis>(text, "Agent 1: Trend Analyst");
 }
@@ -106,7 +125,8 @@ async function analyzeTrends(games: GameData[], lang: string): Promise<TrendAnal
 async function summarizeInsightsAnalytical(
   trendAnalysis: TrendAnalysis,
   lang: string,
-  visionContext?: string
+  visionContext: string | undefined,
+  acc: TokenAccumulator
 ): Promise<InsightSummary> {
   const message = await client.messages.create({
     model: HAIKU,
@@ -125,6 +145,7 @@ async function summarizeInsightsAnalytical(
     }],
   });
 
+  addUsage(acc, HAIKU, message.usage);
   const text = message.content[0].type === "text" ? message.content[0].text : "";
   return parseJSON<InsightSummary>(text, "Agent 2A: Insight (Analytical)");
 }
@@ -133,7 +154,8 @@ async function summarizeInsightsAnalytical(
 async function summarizeInsightsCreative(
   trendAnalysis: TrendAnalysis,
   lang: string,
-  visionContext?: string
+  visionContext: string | undefined,
+  acc: TokenAccumulator
 ): Promise<InsightSummary> {
   const message = await client.messages.create({
     model: HAIKU,
@@ -152,6 +174,7 @@ async function summarizeInsightsCreative(
     }],
   });
 
+  addUsage(acc, HAIKU, message.usage);
   const text = message.content[0].type === "text" ? message.content[0].text : "";
   return parseJSON<InsightSummary>(text, "Agent 2B: Insight (Creative)");
 }
@@ -160,7 +183,8 @@ async function summarizeInsightsCreative(
 async function synthesizeInsight(
   insightA: InsightSummary,
   insightB: InsightSummary,
-  lang: string
+  lang: string,
+  acc: TokenAccumulator
 ): Promise<InsightSummary> {
   const message = await client.messages.create({
     model: SONNET,
@@ -179,6 +203,7 @@ async function synthesizeInsight(
     }],
   });
 
+  addUsage(acc, SONNET, message.usage);
   const text = message.content[0].type === "text" ? message.content[0].text : "";
   return parseJSON<InsightSummary>(text, "Orchestrator: Insight Synthesis");
 }
@@ -188,8 +213,9 @@ async function generateAdCopiesPerformance(
   insight: InsightSummary,
   query: string,
   lang: string,
-  visionContext?: string,
-  preferenceContext?: string
+  visionContext: string | undefined,
+  preferenceContext: string | undefined,
+  acc: TokenAccumulator
 ): Promise<AdCopy[]> {
   const message = await client.messages.create({
     model: HAIKU,
@@ -217,6 +243,7 @@ Make each of the 6 copies distinct in tone: 1) Excitement, 2) Challenge, 3) Curi
     }],
   });
 
+  addUsage(acc, HAIKU, message.usage);
   const text = message.content[0].type === "text" ? message.content[0].text : "";
   const parsed = parseJSON<{ adCopies: AdCopy[] }>(text, "Agent 3A: Ad Copy (Performance)");
   return parsed.adCopies;
@@ -227,8 +254,9 @@ async function generateAdCopiesBrand(
   insight: InsightSummary,
   query: string,
   lang: string,
-  visionContext?: string,
-  preferenceContext?: string
+  visionContext: string | undefined,
+  preferenceContext: string | undefined,
+  acc: TokenAccumulator
 ): Promise<AdCopy[]> {
   const message = await client.messages.create({
     model: HAIKU,
@@ -256,6 +284,7 @@ Make each of the 6 copies distinct in tone: 1) Excitement, 2) Challenge, 3) Curi
     }],
   });
 
+  addUsage(acc, HAIKU, message.usage);
   const text = message.content[0].type === "text" ? message.content[0].text : "";
   const parsed = parseJSON<{ adCopies: AdCopy[] }>(text, "Agent 3B: Ad Copy (Brand)");
   return parsed.adCopies;
@@ -268,7 +297,8 @@ async function synthesizeAdCopies(
   copiesA: AdCopy[],
   copiesB: AdCopy[],
   query: string,
-  lang: string
+  lang: string,
+  acc: TokenAccumulator
 ): Promise<AdCopy[]> {
   const allCopies = [...copiesA, ...copiesB]; // indices 0–5: Perf, 6–11: Brand
 
@@ -291,6 +321,7 @@ async function synthesizeAdCopies(
     }],
   });
 
+  addUsage(acc, SONNET, message.usage);
   const text = message.content[0].type === "text" ? message.content[0].text : "";
   const { selected } = parseJSON<{ selected: number[] }>(text, "Orchestrator: Ad Copy Synthesis");
 
@@ -301,7 +332,7 @@ async function synthesizeAdCopies(
 }
 
 // ── Agent V: Vision Analysis (Sonnet, parallel with trend analysis) ────────
-async function analyzeVision(games: GameData[], lang: string): Promise<VisionResult | null> {
+async function analyzeVision(games: GameData[], lang: string, acc: TokenAccumulator): Promise<VisionResult | null> {
   const imageJobs = games
     .map((g) => ({ appId: g.appId, title: g.title, url: g.screenshots?.[0] ?? null }))
     .filter((j): j is { appId: string; title: string; url: string } => j.url !== null);
@@ -390,6 +421,7 @@ Output raw JSON only — no markdown, no code blocks:
     messages: [{ role: "user", content }],
   });
 
+  addUsage(acc, SONNET, message.usage);
   const text = message.content[0].type === "text" ? message.content[0].text : "";
   const parsed = parseJSON<Omit<VisionResult, "analyzedCount">>(text, "Agent V: Vision Analysis");
 
@@ -419,7 +451,8 @@ function deduplicateCTR(copies: AdCopy[]): AdCopy[] {
 // ── Agent 0: Why Chart (Haiku, for any game appearing in top chart) ────────
 async function analyzeWhyChart(
   chartGames: GameData[],
-  lang: string
+  lang: string,
+  acc: TokenAccumulator
 ): Promise<RisingInsight[]> {
   // Limit to top 6 by chartRank to control cost
   const topGames = [...chartGames]
@@ -452,6 +485,7 @@ async function analyzeWhyChart(
     }],
   });
 
+  addUsage(acc, HAIKU, message.usage);
   const text = message.content[0].type === "text" ? message.content[0].text : "";
   const parsed = parseJSON<{ insights: { appId: string; reason: string }[] }>(text, "Agent 0: Why Chart");
 
@@ -496,6 +530,7 @@ export async function POST(req: NextRequest) {
       try {
         // ── Orchestrator Start ──────────────────────────────────────────
         send({ event: "orchestrator_start", message: "오케스트레이터 시작" });
+        const tokenAcc = mkAcc();
 
         // ── Stage 1: Trend Analysis + Why Chart + Vision (parallel) ──
         // Prefer chart game whose title matches the search query; fall back to highest rank
@@ -508,9 +543,9 @@ export async function POST(req: NextRequest) {
         );
         const chartGames = matchedChartGame ? [matchedChartGame] : allChartGames.slice(0, 1);
         const [trendAnalysis, risingInsights, visionResult] = await Promise.all([
-          analyzeTrends(games as GameData[], lang),
-          chartGames.length > 0 ? analyzeWhyChart(chartGames, lang) : Promise.resolve([]),
-          analyzeVision(games as GameData[], lang).catch(() => null),
+          analyzeTrends(games as GameData[], lang, tokenAcc),
+          chartGames.length > 0 ? analyzeWhyChart(chartGames, lang, tokenAcc) : Promise.resolve([]),
+          analyzeVision(games as GameData[], lang, tokenAcc).catch(() => null),
         ]);
         send({ event: "analysis_done", message: "트렌드 분석 완료 (Sonnet)" });
 
@@ -522,13 +557,13 @@ export async function POST(req: NextRequest) {
 
         // ── Stage 2: Insight Ensemble (2x Haiku, parallel) ────────────
         const [insightA, insightB] = await Promise.all([
-          summarizeInsightsAnalytical(trendAnalysis, lang, visionContext),
-          summarizeInsightsCreative(trendAnalysis, lang, visionContext),
+          summarizeInsightsAnalytical(trendAnalysis, lang, visionContext, tokenAcc),
+          summarizeInsightsCreative(trendAnalysis, lang, visionContext, tokenAcc),
         ]);
         send({ event: "insights_ensemble_done", message: "인사이트 앙상블 완료 (Haiku ×2)" });
 
         // ── Orchestrator: Synthesize best insight (Sonnet) ─────────────
-        const insight = await synthesizeInsight(insightA, insightB, lang);
+        const insight = await synthesizeInsight(insightA, insightB, lang, tokenAcc);
 
         // ── Stage 3 prep: fetch tone preference history for this genre ──
         const topGenre = (games as GameData[])[0]?.genre ?? "";
@@ -558,13 +593,13 @@ export async function POST(req: NextRequest) {
 
         // ── Stage 3: Ad Copy Ensemble (2x Haiku, parallel) ────────────
         const [copiesA, copiesB] = await Promise.all([
-          generateAdCopiesPerformance(insight, query, lang, visionContext, preferenceContext),
-          generateAdCopiesBrand(insight, query, lang, visionContext, preferenceContext),
+          generateAdCopiesPerformance(insight, query, lang, visionContext, preferenceContext, tokenAcc),
+          generateAdCopiesBrand(insight, query, lang, visionContext, preferenceContext, tokenAcc),
         ]);
         send({ event: "copies_ensemble_done", message: "광고 소재 앙상블 완료 (Haiku ×2)" });
 
         // ── Orchestrator: Select best ad copies (Sonnet) ───────────────
-        const adCopies = deduplicateCTR(await synthesizeAdCopies(copiesA, copiesB, query, lang));
+        const adCopies = deduplicateCTR(await synthesizeAdCopies(copiesA, copiesB, query, lang, tokenAcc));
 
         const result: AnalysisResult = {
           query,
@@ -577,6 +612,18 @@ export async function POST(req: NextRequest) {
           createdAt: new Date().toISOString(),
         };
         send({ event: "final_selection_done", message: "최종 선별 완료", result });
+
+        // ── Save token usage (fire-and-forget) ─────────────────────────
+        import("@/lib/supabase").then(({ supabase }) =>
+          supabase.from("token_logs").insert({
+            query,
+            sonnet_input:  tokenAcc.sonnet.input,
+            sonnet_output: tokenAcc.sonnet.output,
+            haiku_input:   tokenAcc.haiku.input,
+            haiku_output:  tokenAcc.haiku.output,
+            estimated_cost_usd: calcCost(tokenAcc),
+          }).then(({ error }) => { if (error) console.error("[tokens] save failed:", error.message); })
+        );
       } catch (error) {
         console.error("[analyze] Orchestrator error:", error);
         send({ error: String(error) });
