@@ -35,6 +35,7 @@ export default function ResultPage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [likedIndex, setLikedIndex] = useState<number | null>(null);
+  const [feedbackToast, setFeedbackToast] = useState<"success" | "error" | null>(null);
 
   useEffect(() => {
     const current = localStorage.getItem("centinel_current");
@@ -51,16 +52,22 @@ export default function ResultPage() {
     const genre = result.games[0]?.genre ?? "";
     const toneNames = ["Excitement", "Challenge", "Curiosity", "FOMO", "Simplicity", "Empathy"];
 
-    await fetch("/api/feedback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: result.query,
-        genre,
-        preferredTone: toneNames[index % 6],
-        hook: copy.hook,
-      }),
-    }).catch(() => {}); // 비성공해도 UI에 영향 없음
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: result.query,
+          genre,
+          preferredTone: toneNames[index % 6],
+          hook: copy.hook,
+        }),
+      });
+      setFeedbackToast(res.ok ? "success" : "error");
+    } catch {
+      setFeedbackToast("error");
+    }
+    setTimeout(() => setFeedbackToast(null), 2500);
   }, [result, likedIndex]);
 
   const copyShareLink = useCallback(() => {
@@ -74,6 +81,17 @@ export default function ResultPage() {
 
   return (
     <div className="min-h-screen text-[#0A1929]" style={{ background: "#F8FBFF" }}>
+      {/* Feedback toast */}
+      {feedbackToast && (
+        <div
+          className="fixed bottom-6 right-6 z-[100] px-4 py-2.5 rounded-[10px] text-sm font-semibold shadow-lg transition-all duration-300"
+          style={feedbackToast === "success"
+            ? { background: "#E6FAF5", color: "#00875A", border: "1px solid #B2EADC" }
+            : { background: "#FEF0ED", color: "#C0392B", border: "1px solid #F9C9BE" }}
+        >
+          {feedbackToast === "success" ? "✓ 피드백이 저장됐어요" : "⚠ 피드백 저장에 실패했어요"}
+        </div>
+      )}
       {/* Nav */}
       <nav className="bg-white border-b border-[#E8F4FC] shadow-sm px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
