@@ -17,7 +17,7 @@ function buildRising(
     .map((g) => {
       const oldRank = oldRankMap.get(g.app_id);
       const isNewEntry = oldRank == null;
-      const rankChange = isNewEntry ? 31 - g.rank : oldRank - g.rank;
+      const rankChange = isNewEntry ? 201 - g.rank : oldRank - g.rank;
       return { ...g, rankChange, isNewEntry };
     })
     .filter((g) => g.rankChange > 0)
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
     .eq("collection", config.collection)
     .eq("category",   config.category)
     .eq("platform",   platform)
-    .lt("fetched_at", new Date(latestDate.getTime() - 60 * 60 * 1000).toISOString())
+    .lt("fetched_at", new Date(latestDate.getTime() - 45 * 60 * 1000).toISOString())
     .order("fetched_at", { ascending: false })
     .limit(1)
     .single();

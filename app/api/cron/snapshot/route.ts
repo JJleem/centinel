@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
       const games = await gplay.list({
         collection: tab.collection,
         category: tab.category,
-        num: 30,
+        num: 200,
         lang: "en",
         country: "us",
       });
@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
       const games = await store.list({
         collection: tab.collection,
         category:   tab.category,
-        num:        30,
+        num:        200,
         country:    "us",
       });
 
