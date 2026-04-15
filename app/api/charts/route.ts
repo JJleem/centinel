@@ -71,7 +71,8 @@ export async function GET(req: NextRequest) {
         .eq("fetched_at", latestRow.fetched_at)
         .order("rank",    { ascending: true });
 
-      if (rows && rows.length > 0) {
+      // 100개 미만이면 구 데이터(30개짜리) — 라이브 페치로 fall through
+      if (rows && rows.length >= 100) {
         const games: ChartGame[] = rows.map((r) => ({
           title:     r.title     ?? "Unknown",
           appId:     r.app_id   ?? "",
