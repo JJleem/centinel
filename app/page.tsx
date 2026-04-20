@@ -27,7 +27,7 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-2">
           <a
-            href="/임재준_AI애플리케이션엔지니어_과제전형.html"
+            href="/proposal.html"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-[#4A6080] hover:text-[#0B7FD4] transition-colors px-3 py-1.5 border border-[#E8F4FC] hover:border-[#C8E4F4] rounded-[10px] hover:bg-[#F8FBFF]"
@@ -35,7 +35,7 @@ export default function Home() {
             기획서
           </a>
           <a
-            href="/임재준_Centinel_고도화보고서.html"
+            href="/enhancement-report.html"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-[#4A6080] hover:text-[#6B4EFF] transition-colors px-3 py-1.5 border border-[#E8F4FC] hover:border-[#C4B8FF] rounded-[10px] hover:bg-[#F5F0FF]"
