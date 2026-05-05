@@ -27,6 +27,15 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-2">
           <a
+            href="https://centiment.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-semibold text-white px-3 py-1.5 rounded-[10px] shadow-sm transition-opacity hover:opacity-80"
+            style={{ background: "linear-gradient(135deg, #7C3AED, #A855F7, #C084FC)" }}
+          >
+            centiment
+          </a>
+          <a
             href="/proposal.html"
             target="_blank"
             rel="noopener noreferrer"
